@@ -1,0 +1,17 @@
+* General
+** DONE basic arithmetic
+** TODO branch wait for read
+** TODO branch wait for write
+** TODO create web ui
+
+* Testing
+** DONE test unary encoding
+** DONE hello world test binary
+** TODO test branching
+
+* Arithmetic
+** TODO more arithmetic
+** TODO carry
+** TODO signed ops
+** TODO signed compare
+
