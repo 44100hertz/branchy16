@@ -5,6 +5,8 @@
 #include "tests.h"
 #endif
 
+static void write_hello();
+
 // write instruction word
 #define WRITE(word) (cpu_store(offset, word, false), offset++)
 // write special or binary word
@@ -20,7 +22,18 @@ int main(int argc, char **argv) {
     return 0;
 #endif
     cpu_init();
+    write_hello();
 
+    for (int i = 0; i < 100; ++i) {
+        bool running = cpu_step();
+        if (!running) {
+            printf("Executed %d cycles.", i);
+            break;
+        }
+    }
+}
+
+void write_hello() {
     word offset = 0;
 
     // hello, world program
@@ -55,12 +68,4 @@ int main(int argc, char **argv) {
 
     char *hello = "hello, world\n";
     for (char *c = hello; *c != 0; ++c) WRITE(*c);
-
-    for (int i = 0; i < 100; ++i) {
-        bool running = cpu_step();
-        if (!running) {
-            printf("Executed %d cycles.", i);
-            break;
-        }
-    }
 }
