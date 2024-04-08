@@ -1,14 +1,20 @@
-debug:
-	clang *.c -std=c2x -Wall -g -O0 -o branchy
+OUTDIR=./bin/
+OUT=./bin/branchy
 
-release:
-	clang *.c -std=c2x -O3 -o branchy
+outdir:
+	mkdir -p $(OUTDIR)
 
-run: release
-	./branchy
+debug: outdir
+	clang *.c -std=c2x -Wall -g -O0 -o $(OUT)
 
-test:
-	clang *.c -std=c2x -Wall -DTESTING -o branchy
-	./branchy
+release: outdir
+	clang *.c -std=c2x -O3 -o $(OUT)
 
-.PHONY: all
+run: outdir release
+	$(OUT)
+
+test: outdir
+	clang *.c -std=c2x -Wall -DTESTING -o $(OUT)
+	$(OUT)
+
+.PHONY: outdir debug release run test
