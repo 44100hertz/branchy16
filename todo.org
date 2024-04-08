@@ -1,13 +1,14 @@
 * General
 ** DONE basic arithmetic
-** TODO branch wait for read
-** TODO branch wait for write
+** DONE branch wait for load
 ** TODO create web ui
+** TODO create assembler
 
 * Testing
 ** DONE test unary encoding
-** DONE hello world test binary
-** TODO test branching
+** DONE ROM to test hello world
+** DONE ROM to test branching
+** TODO ROM to test arithmetic (multiply ROM)
 
 * Arithmetic
 ** TODO more arithmetic

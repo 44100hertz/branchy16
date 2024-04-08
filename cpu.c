@@ -1,7 +1,5 @@
 #include "cpu.h"
 
-#define DEBUG true
-
 #include <stdio.h>
 #include <string.h>
 
@@ -12,10 +10,11 @@ typedef struct {
     byte compare_flags;
 
     // special state for memory operations
-    word mem_target;    // target addr for memory operations
-    byte mem_reg;       // register for memory operations
+    word mem_addr;      // target addr for memory operations
+    word mem_val;       // register or value for memory operations
     bool mem_indirect;  // enable indirection on memory access
     bool store_enable;  // do a store operation
+    bool mem_wait;      // wait for another branch to store or load
 
     bool running;
 } cpu_branch;
@@ -23,6 +22,9 @@ typedef struct {
 static word cpu_memory[CPU_MEMSIZE];
 static cpu_branch cpu_branches[CPU_NUM_BRANCHES];
 
+static inline bool branch_running(cpu_branch *br) {
+    return br->running && !br->mem_wait;
+}
 static word branch_fetch(cpu_branch *br);
 static void branch_step(cpu_branch *br);
 static void branch_step_special(cpu_branch *br, word);
@@ -44,11 +46,40 @@ bool cpu_step() {
     bool running = false;
     cpu_branch *last = &cpu_branches[CPU_NUM_BRANCHES];
     for (cpu_branch *br = cpu_branches; br < last; ++br) {
-        if (br->running) {
+        if (branch_running(br)) {
             branch_step(br);
         }
-        running = running || br->running;
+        // branch step can affect running, do not put this in the 'if'
+        running = running || branch_running(br);
     }
+
+    // Run every store operation at once. Multiple parallel stores will OR each
+    // other. Other than side effects, branch execution order doesn't matter.
+    static bool did_write[CPU_MEMSIZE];
+    memset(did_write, 0, sizeof(did_write));
+
+    for (cpu_branch *br = cpu_branches; br < last; ++br) {
+        if (br->store_enable) {
+            word addr = br->mem_addr;
+            if (br->mem_indirect) addr = cpu_memory[addr];
+            // first write clears memory addr
+            if (!did_write[addr]) cpu_memory[addr] = 0;
+            did_write[addr] = true;
+            cpu_memory[addr] |= br->mem_val;
+        }
+        br->store_enable = false;
+    }
+
+    // clear store waits
+    for (cpu_branch *br = cpu_branches; br < last; ++br) {
+        if (!br->store_enable && br->mem_wait && did_write[br->mem_addr]) {
+            br->reg[br->mem_val] = cpu_memory[br->mem_addr];
+            // only unlock one waiting branch at a time
+            did_write[br->mem_addr] = false;
+            br->mem_wait = false;
+        }
+    }
+
     return running;
 }
 
@@ -74,14 +105,24 @@ void branch_step(cpu_branch *br) {
 void branch_step_special(cpu_branch *br, word instr) {
     switch (instr >> CPU_ITAG_OFFSET) {
     case ITAG_LOAD: {
-        // Load = xxxxx -oi -DDD TTTT
+        // Load = xxxxx woi -DDD TTTT
         // T = address target
         word target = ARG_NIBBLE(0);
         // o = use relative address
         if (instr & (1 << 9)) target += br->bp;
-        // i = use indirect
-        // D = destination register
-        br->reg[instr >> 4 & 0x7] = cpu_load(target, instr & (1 << 8));
+        // D = destination
+        uintptr_t dest = instr >> 4 & 0x7;
+        // w = wait for another branch to write, then load
+        if (instr & (1 << 10)) {
+            br->mem_addr = target;
+            br->mem_wait = true;
+            br->store_enable = false;
+            br->mem_val = dest;
+        } else {
+            // D = destination register
+            // i = use indirect
+            br->reg[dest] = cpu_load(target, instr & (1 << 8));
+        }
         break;
     }
     case ITAG_STORE: {
@@ -91,24 +132,22 @@ void branch_step_special(cpu_branch *br, word instr) {
         // finished.
         br->store_enable = true;
         // S = source register
-        br->mem_reg = instr & 0x7;
+        br->mem_val = br->reg[instr & 0x7];
         // A = addressing indirect
         br->mem_indirect = instr & (1 << 8);
         // D = destination
         word target = ARG_NIBBLE(4);
         // o = use relative address
         if (instr & (1 << 9)) target += br->bp;
-        br->mem_target = target;
+        br->mem_addr = target;
         break;
     }
     case ITAG_JUMP: {
-        // Jump = xxxxx --i AAAA -CCC
+        // Jump = xxxxx --- AAAA -CCC
         word addr = ARG_NIBBLE(4);
-        // i = jump indirect (only for immediate value)
-        if (instr & 1 << 8 && instr & 1 << 7) addr = cpu_load(addr, 0);
         // Jump if compare flags are satisfied
         word requirement = instr & 0x7;
-        if (requirement & br->compare_flags) {
+        if (requirement == 7 || requirement & br->compare_flags) {
             br->pc = addr;
         }
         break;
@@ -167,11 +206,7 @@ void branch_step_unary(cpu_branch *br, word instr) {
     br->reg[instr >> 8 & 0x7] = out;
 }
 
-word branch_fetch(cpu_branch *br) {
-    word out = cpu_memory[br->pc % CPU_MEMSIZE];
-    ++br->pc;
-    return out;
-}
+word branch_fetch(cpu_branch *br) { return cpu_memory[br->pc++]; }
 
 // Create a branch from a running branch
 void cpu_branch_create(cpu_branch *source, word pc, word bp) {
