@@ -27,7 +27,7 @@ https:  // www.youtube.com/watch?v=GKnAWcWnJJc
     cpu_init();
     write_branching_hello();
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         bool running = cpu_step();
         if (!running) {
             printf("Executed %d cycles.\n", i);
