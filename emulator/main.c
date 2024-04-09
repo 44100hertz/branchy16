@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "cpu.h"
+#include "helpful_constants.h"
 #ifdef TESTING
 #include "tests.h"
 #endif
@@ -12,16 +13,18 @@ static void write_branching_hello();
 // write instruction word
 #define WRITE(word) (cpu_store(offset, word, false), offset++)
 // write special or binary word
-#define WRITE_I(instr, word) \
-    (cpu_store(offset, instr << CPU_ITAG_OFFSET | word, false), offset++)
+#define WRITE_I(instr, n0, n1, n2)                                            \
+    (cpu_store(offset, (ITAG_##instr) << 11 | n0 << 8 | n1 << 4 | n2, false), \
+     offset++)
 // write unary instruction word
-#define WRITE_U(instr, word) \
-    (cpu_store(offset, cpu_encode_unary(instr) | word, false), offset++)
+#define WRITE_U(instr, n0, n1)                                             \
+    (cpu_store(offset, cpu_encode_unary(ITAG_##instr) | n0 << 8 | n1 << 4, \
+               false),                                                     \
+     offset++)
 
 int main(int argc, char **argv) {
 #ifdef TESTING
     run_tests();
-https:  // www.youtube.com/watch?v=GKnAWcWnJJc
     return 0;
 #endif
     cpu_init();
@@ -45,32 +48,31 @@ void write_branching_hello() {
     // which duplicates characters using a second branch
     //
     //   branch writer char_ptr
-    WRITE_I(ITAG_BRANCH, 0b000 << 8 | 8 << 4 | 8 << 0);
+    WRITE_I(BRANCH, 0b000, IMMED, IMMED);
     WRITE(writer_offset);
     WRITE(char_ptr);
 
     // first branch loop -- feed chars to second branch
     //   mov r0, &hello
-    WRITE_U(ITAG_COPY, 0 << 8 | 8 << 4);
+    WRITE_U(COPY, R0, IMMED);
     word hello_offset = offset++;
     // loop:
-    word loop_offset = offset;
     //   load r1 r0
-    WRITE_I(ITAG_LOAD, 1 << 4 | 0);
+    word loop_offset = WRITE_I(LOAD, 0, R1, R0);
     //   cmp r1 0
-    WRITE_I(ITAG_COMPARE, 1 << 4 | 8);
+    WRITE_I(COMPARE, 0, R1, IMMED);
     WRITE(0);
     //   jeq done
-    WRITE_I(ITAG_JUMP, 8 << 4 | 0b001);
+    WRITE_I(JUMP, 0, IMMED, COND_EQ);
     word done_offset = offset++;
     //   store char_ptr r1
-    WRITE_I(ITAG_STORE, 8 << 4 | 1);
+    WRITE_I(STORE, 0, IMMED, R1);
     WRITE(char_ptr);
     //   add r0 r0 1
-    WRITE_I(ITAG_ADD, 0 << 8 | 0 << 4 | 8);
+    WRITE_I(ADD, R0, R0, IMMED);
     WRITE(1);
     //   jmp loop
-    WRITE_I(ITAG_JUMP, 0b000 << 8 | 8 << 4 | 0b111);
+    WRITE_I(JUMP, 0, IMMED, COND_ALWAYS);
     WRITE(loop_offset);
     // done:
     cpu_store(done_offset, offset, 0);
@@ -83,11 +85,11 @@ void write_branching_hello() {
 
     // second branch loop -- write chars twice
     offset = writer_offset;
-    WRITE_I(ITAG_LOAD, 0b110 << 8 | 0 << 4 | 8);
+    WRITE_I(LOAD, 0b110, R0, IMMED);
     WRITE(0);
-    WRITE_I(ITAG_PUTC, 0);
-    WRITE_I(ITAG_PUTC, 0);
-    WRITE_I(ITAG_JUMP, 8 << 4 | 0b111);
+    WRITE_I(PUTC, 0, 0, R0);
+    WRITE_I(PUTC, 0, 0, R0);
+    WRITE_I(JUMP, 0, IMMED, COND_ALWAYS);
     WRITE(writer_offset);
 }
 
@@ -97,25 +99,25 @@ void write_hello() {
     // hello, world program
     //
     //   mov r0, &hello
-    WRITE_U(ITAG_COPY, 0 << 8 | 8 << 4);
+    WRITE_U(COPY, R0, IMMED);
     word hello_offset = offset++;
     // loop:
     word loop_offset = offset;
     //   load r1 r0
-    WRITE_I(ITAG_LOAD, 1 << 4 | 0);
+    WRITE_I(LOAD, 0b000, R1, R0);
     //   cmp r1 0
-    WRITE_I(ITAG_COMPARE, 1 << 4 | 8);
+    WRITE_I(COMPARE, 0, R1, IMMED);
     WRITE(0);
     //   jeq done
-    WRITE_I(ITAG_JUMP, 8 << 4 | 0b001);
+    WRITE_I(JUMP, 0, IMMED, COND_EQ);
     word done_offset = offset++;
     //   putc r1
-    WRITE_I(ITAG_PUTC, 1);
+    WRITE_I(PUTC, 0, 0, R1);
     //   add r0 r0 1
-    WRITE_I(ITAG_ADD, 0 << 8 | 0 << 4 | 8);
+    WRITE_I(ADD, 0, 0, IMMED);
     WRITE(1);
     //   jmp loop
-    WRITE_I(ITAG_JUMP, 8 << 4 | 0b111);
+    WRITE_I(JUMP, 0, IMMED, COND_ALWAYS);
     WRITE(loop_offset);
     // done:
     cpu_store(done_offset, offset, 0);
