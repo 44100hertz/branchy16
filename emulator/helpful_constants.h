@@ -8,6 +8,9 @@ enum {
     R6,
     R7,
     IMMED,
+    CONST_0,
+    CONST_1,
+    CONST_MINUS_1,
 };
 
 // combinations of conditionals

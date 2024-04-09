@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 typedef struct {
     word reg[8];
     word bp;
@@ -84,11 +85,17 @@ bool cpu_step() {
 }
 
 // Common pattern: a nibble will define a parameter.
-// If top = 1, it's an immediate value.
-// If top = 0, it loads a register indexed by the last 3 bits.
-#define ARG_NIBBLE(offset)                            \
-    ((instr & (1 << (offset + 3))) ? branch_fetch(br) \
-                                   : br->reg[instr >> offset & 0x7])
+// 0-7 = register
+// 8 = immediate
+// 9 = zero
+// 10 = 1
+// 11 = -1/0xffff
+#define ARG_NIBBLE(offset)                                           \
+    (instr >> offset & 0xf) < 8     ? br->reg[instr >> offset & 0x7] \
+    : (instr >> offset & 0xf) == 8  ? branch_fetch(br)               \
+    : (instr >> offset & 0xf) == 9  ? 0                              \
+    : (instr >> offset & 0xf) == 10 ? 1                              \
+                                    : -1;
 
 // Step a single CPU branch
 void branch_step(cpu_branch *br) {
@@ -154,7 +161,6 @@ void branch_step_special(cpu_branch *br, word instr) {
     }
     case ITAG_BRANCH: {
         // Branch = xxxxx --i AAAA OOOO
-
         // A = register or immediate
         word addr = ARG_NIBBLE(4);
         // i = branch indirect (only for immediate value)
