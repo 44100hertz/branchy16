@@ -1,0 +1,19 @@
+{
+  "name": "example-bare",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"simple-file-watch --path='emulator' --command='EFLAGS=-g make -C emulator wasm'\" \"vinxi dev\"",
+    "build": "EFLAGS=-O2 make -C emulator/ wasm && vinxi build",
+    "start": "vinxi start"
+  },
+  "dependencies": {
+    "@solidjs/start": "^1.0.0-rc.0",
+    "concurrently": "^8.2.2",
+    "simple-file-watch": "^3.0.0",
+    "solid-js": "^1.8.16",
+    "vinxi": "^0.3.10"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

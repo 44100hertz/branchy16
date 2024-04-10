@@ -11,8 +11,8 @@
 ** TODO ROM to test arithmetic (multiply ROM)
 
 * Arithmetic
+** DONE add more defaults to nibble arguments
 ** TODO more arithmetic
 ** TODO carry
 ** TODO signed ops
 ** TODO signed compare
-
