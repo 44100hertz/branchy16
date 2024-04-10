@@ -2,8 +2,8 @@
   "name": "example-bare",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"simple-file-watch --path='emulator' --command='EFLAGS=-g make -C emulator wasm'\" \"vinxi dev\"",
-    "build": "EFLAGS=-O2 make -C emulator/ wasm && vinxi build",
+    "dev": "concurrently \"simple-file-watch --path='emulator' --command='CFLAGS=-g emmake make -C emulator wasm'\" \"vinxi dev\"",
+    "build": "CFLAGS=-O3 emmake make -C emulator/ wasm && vinxi build",
     "start": "vinxi start"
   },
   "dependencies": {

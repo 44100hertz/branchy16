@@ -1,26 +1,27 @@
 OUTDIR=./bin/
 OUT=./bin/branchy
-CC=clang
+CC?=$(CC)
+CFLAGS:=$(CFLAGS) -std=c2x
 
-EINCLUDES="-sEXPORTED_FUNCTIONS=cpu_init,cpu_step -sEXPORTED_RUNTIME_METHODS=cwrap"
+EINCLUDES=-sEXPORTED_FUNCTIONS="_cpu_init,_cpu_step" -sEXPORTED_RUNTIME_METHODS="cwrap"
 
 outdir:
 	mkdir -p $(OUTDIR)
 
 debug: outdir
-	clang *.c -std=c2x -Wall -g -O0 -o $(OUT)
+	$(CC) *.c $(CFLAGS) -Wall -g -O0 -o $(OUT)
 
 release: outdir
-	clang *.c -std=c2x -O3 -o $(OUT)
+	$(CC) *.c $(CFLAGS) -O3 -o $(OUT)
 
 run: outdir release
 	$(OUT)
 
 test: outdir
-	clang *.c -std=c2x -Wall -DTESTING -o $(OUT)
+	$(CC) *.c $(CFLAGS) -Wall -DTESTING -o $(OUT)
 	$(OUT)
 
-wasm:
-	emcc *.c -std=c2x -O3 $(EFLAGS) $(EINCLUDES) -o ../public/branchy.wasm -o ../public/branchy.mjs
+wasm outdir:
+	$(CC) *.c $(CFLAGS) $(EINCLUDES) -o ./bin/branchy.mjs
 
 .PHONY: outdir debug release run test
