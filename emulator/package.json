@@ -1,0 +1,13 @@
+{
+  "name": "branchy-cpu",
+  "type": "module",
+  "scripts": {
+    "build": "CFLAGS=-O3 emmake make -C src/ wasm",
+    "dev": "./scripts/dev.sh",
+    "test": "CFLAGS=-g make -C src test && ./bin/branchy"
+  },
+  "main": "./bin/branchy.mjs",
+  "devDependencies": {
+    "simple-file-watch": "^3.0.0"
+  }
+}

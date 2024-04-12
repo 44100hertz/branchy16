@@ -8,12 +8,12 @@ dependencies:
   '@solidjs/start':
     specifier: ^1.0.0-rc.0
     version: 1.0.0-rc.0(solid-js@1.8.16)(vinxi@0.3.11)(vite@5.2.8)
+  branchy-cpu:
+    specifier: link:emulator
+    version: link:emulator
   concurrently:
     specifier: ^8.2.2
     version: 8.2.2
-  simple-file-watch:
-    specifier: ^3.0.0
-    version: 3.0.0
   solid-js:
     specifier: ^1.8.16
     version: 1.8.16
@@ -2299,11 +2299,6 @@ packages:
       reusify: 1.0.4
     dev: false
 
-  /file-extension@3.1.2:
-    resolution: {integrity: sha512-Ae7J6Nz0kQvUOesn4+By0QJc16hpuh+zOM9w7pb6N8pjret2d0o9cKix+iOgNiT32rZSDYJINoDAPRs/VsBiuA==}
-    engines: {node: '>=0.10.0'}
-    dev: false
-
   /file-uri-to-path@1.0.0:
     resolution: {integrity: sha512-0Zt+s3L7Vf1biwWZ29aARiVYLx7iMGnEUl9x33fbB/j3jR81u/O2LbqK+Bm1CDSNDKVtJ/YjwY7TUd5SkeLQLw==}
     dev: false
@@ -2412,11 +2407,6 @@ packages:
   /get-stream@8.0.1:
     resolution: {integrity: sha512-VaUJspBffn/LMCJVoMvSAdmscJyS1auj5Zulnn5UoYcY531UWmdwhRWkcGKnGU93m5HSXP9LP2usOryrBtQowA==}
     engines: {node: '>=16'}
-    dev: false
-
-  /get-value@2.0.6:
-    resolution: {integrity: sha512-Ln0UQDlxH1BapMu3GPtf7CuYNwRZf2gwCuPqbyG6pB8WfmFpzqcy4xtAaAMUhnNqjMKTiCPZG2oMT3YSx8U2NA==}
-    engines: {node: '>=0.10.0'}
     dev: false
 
   /giget@1.2.3:
@@ -2998,19 +2988,6 @@ packages:
       brace-expansion: 2.0.1
     dev: false
 
-  /minimist-mini@2.0.9:
-    resolution: {integrity: sha512-XS4kV0iwk+aAH6Hej8gl1QM52OTffp/Xy7FBeYvbXCDUsAtXDXU8dnccPKGXXfgBOj581urxTr7Xjk2ewJ3FGA==}
-    hasBin: true
-    dependencies:
-      get-value: 2.0.6
-      minimist: 1.2.8
-      remove-markdown: 0.2.2
-    dev: false
-
-  /minimist@1.2.8:
-    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
-    dev: false
-
   /minipass@3.3.6:
     resolution: {integrity: sha512-DxiNidxSEK+tHG6zOIklvNOwm3hvCrbUrdtzY74U6HKTJxvIDfOUL5W5P2Ghd3DTkhhKPYGqeNUIh5qcM4YBfw==}
     engines: {node: '>=8'}
@@ -3214,11 +3191,6 @@ packages:
 
   /node-releases@2.0.14:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
-    dev: false
-
-  /node-watch@0.7.4:
-    resolution: {integrity: sha512-RinNxoz4W1cep1b928fuFhvAQ5ag/+1UlMDV7rbyGthBIgsiEouS4kvRayvvboxii4m8eolKOIBo3OjDqbc+uQ==}
-    engines: {node: '>=6'}
     dev: false
 
   /nopt@5.0.0:
@@ -3536,10 +3508,6 @@ packages:
     resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
     dev: false
 
-  /remove-markdown@0.2.2:
-    resolution: {integrity: sha512-jwgEf3Yh/xi4WodWi/vPlasa9C9pMv1kz5ITOIAGjBW7PeZ/CHZCdBfJzQnn2VX2cBvf1xCuJv0tUJqn/FCMNA==}
-    dev: false
-
   /require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
@@ -3761,17 +3729,6 @@ packages:
   /signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
-    dev: false
-
-  /simple-file-watch@3.0.0:
-    resolution: {integrity: sha512-xemzv62qhLtNetRf0VmDl+qbQk7eu1qJH45/giTxQD98gpFrrKhzMADdHliv06s/lY/oikGAfgoFyM9C3/Wm3g==}
-    hasBin: true
-    dependencies:
-      file-extension: 3.1.2
-      get-value: 2.0.6
-      minimist: 1.2.8
-      minimist-mini: 2.0.9
-      node-watch: 0.7.4
     dev: false
 
   /sirv@2.0.4:

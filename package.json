@@ -1,19 +1,20 @@
 {
-  "name": "example-bare",
+  "name": "branchy16",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"simple-file-watch --path='emulator' --command='CFLAGS=-g emmake make -C emulator wasm'\" \"vinxi dev\"",
-    "build": "CFLAGS=-O3 emmake make -C emulator/ wasm && vinxi build",
+    "dev": "vinxi dev",
+    "build": "vinxi build",
     "start": "vinxi start"
   },
   "dependencies": {
     "@solidjs/start": "^1.0.0-rc.0",
+    "branchy-cpu": "link:emulator",
     "concurrently": "^8.2.2",
-    "simple-file-watch": "^3.0.0",
     "solid-js": "^1.8.16",
     "vinxi": "^0.3.10"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18",
+    "pnpm": ">=8.0.0"
   }
 }

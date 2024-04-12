@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     cpu_init();
     write_branching_hello();
 
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 900; ++i) {
         bool running = cpu_step();
         if (!running) {
             printf("Executed %d cycles.\n", i);

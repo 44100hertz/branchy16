@@ -1,0 +1,55 @@
+lockfileVersion: '6.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+devDependencies:
+  simple-file-watch:
+    specifier: ^3.0.0
+    version: 3.0.0
+
+packages:
+
+  /file-extension@3.1.2:
+    resolution: {integrity: sha512-Ae7J6Nz0kQvUOesn4+By0QJc16hpuh+zOM9w7pb6N8pjret2d0o9cKix+iOgNiT32rZSDYJINoDAPRs/VsBiuA==}
+    engines: {node: '>=0.10.0'}
+    dev: true
+
+  /get-value@2.0.6:
+    resolution: {integrity: sha512-Ln0UQDlxH1BapMu3GPtf7CuYNwRZf2gwCuPqbyG6pB8WfmFpzqcy4xtAaAMUhnNqjMKTiCPZG2oMT3YSx8U2NA==}
+    engines: {node: '>=0.10.0'}
+    dev: true
+
+  /minimist-mini@2.0.9:
+    resolution: {integrity: sha512-XS4kV0iwk+aAH6Hej8gl1QM52OTffp/Xy7FBeYvbXCDUsAtXDXU8dnccPKGXXfgBOj581urxTr7Xjk2ewJ3FGA==}
+    hasBin: true
+    dependencies:
+      get-value: 2.0.6
+      minimist: 1.2.8
+      remove-markdown: 0.2.2
+    dev: true
+
+  /minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+    dev: true
+
+  /node-watch@0.7.4:
+    resolution: {integrity: sha512-RinNxoz4W1cep1b928fuFhvAQ5ag/+1UlMDV7rbyGthBIgsiEouS4kvRayvvboxii4m8eolKOIBo3OjDqbc+uQ==}
+    engines: {node: '>=6'}
+    dev: true
+
+  /remove-markdown@0.2.2:
+    resolution: {integrity: sha512-jwgEf3Yh/xi4WodWi/vPlasa9C9pMv1kz5ITOIAGjBW7PeZ/CHZCdBfJzQnn2VX2cBvf1xCuJv0tUJqn/FCMNA==}
+    dev: true
+
+  /simple-file-watch@3.0.0:
+    resolution: {integrity: sha512-xemzv62qhLtNetRf0VmDl+qbQk7eu1qJH45/giTxQD98gpFrrKhzMADdHliv06s/lY/oikGAfgoFyM9C3/Wm3g==}
+    hasBin: true
+    dependencies:
+      file-extension: 3.1.2
+      get-value: 2.0.6
+      minimist: 1.2.8
+      minimist-mini: 2.0.9
+      node-watch: 0.7.4
+    dev: true

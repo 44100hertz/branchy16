@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "putchar.h"  // overwrites putchar in case of emscripten
-
 typedef struct {
     word reg[8];
     word bp;
