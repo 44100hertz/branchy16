@@ -5,8 +5,11 @@ Branchy16 is a fantasy console with an emulated 16-bit CPU that may run many thr
 # How do I work this?
 
 Install pnpm and emscripten.
-
-`pnpm -r --parallel dev`
+```
+git clone git@github.com:44100hertz/branch16
+pnpm i
+pnpm -r --parallel dev
+```
 ...Then open a browser to localhost:3000
 
 NIXOS: look at `emulator/scripts/fix-emscripten-nix`. This is the kind of thing you want to do to fix emscripten's cache.
