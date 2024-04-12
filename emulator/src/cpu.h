@@ -47,3 +47,4 @@ void cpu_init();
 bool cpu_step();  // Returns true if CPU is still running
 void cpu_store(word addr, word value, bool indirect);
 word cpu_load(word addr, bool indirect);
+void override_putchar(int (*)(int));

@@ -32,7 +32,8 @@ static void branch_step_binary(cpu_branch *br, word);
 static void branch_step_unary(cpu_branch *br, word);
 static void cpu_branch_create(cpu_branch *source, word pc, word bp);
 
-int (*emit_char)(int) = putchar;
+static int (*emit_char)(int) = putchar;
+void override_putchar(int (*fn)(int)) { emit_char = fn; }
 
 void cpu_init() {
     // Zero memory and branch state

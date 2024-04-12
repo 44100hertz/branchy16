@@ -20,7 +20,7 @@ static void clear_string() {
     memset(char_buf, 0, sizeof(char_buf));
     char_buf_pos = 0;
 }
-static int emit_override(int c) {
+static int test_putchar(int c) {
     char_buf[char_buf_pos++] = c;
     return c;
 }
@@ -33,7 +33,7 @@ static void test_string(char *test) {
 }
 
 int main(int _argc, char **_argv) {
-    emit_char = emit_override;
+    override_putchar(test_putchar);
     puts("-------- Test: Unary Encode");
     test_unary_encode();
     puts("-------- Test: Hello");
