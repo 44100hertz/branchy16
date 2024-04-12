@@ -7,7 +7,7 @@ Branchy16 is a fantasy console with an emulated 16-bit CPU that may run many thr
 Install pnpm and emscripten.
 ```
 git clone git@github.com:44100hertz/branchy16
-pnpm i
+pnpm -r install
 pnpm -r --parallel dev
 ```
 ...Then open a browser to localhost:3000
