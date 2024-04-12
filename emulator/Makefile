@@ -9,15 +9,6 @@ EINCLUDES=-sEXPORTED_FUNCTIONS="_cpu_init,_cpu_step,_main" -sEXPORTED_RUNTIME_ME
 outdir:
 	mkdir -p $(OUTDIR)
 
-debug: outdir
-	$(CC) $(SOURCES) $(CFLAGS) -Wall -g -O0 -o $(OUT)
-
-release: outdir
-	$(CC) $(SOURCES) $(CFLAGS) -O3 -o $(OUT)
-
-run: outdir release
-	$(OUT)
-
 test: outdir
 	$(CC) $(SOURCES) $(CFLAGS) -Wall -DTESTING -o $(OUT)
 	$(OUT)
@@ -28,4 +19,4 @@ wasm: outdir
 clean:
 	rm -r ./bin/
 
-.PHONY: outdir debug release run test wasm
+.PHONY: outdir test wasm clean

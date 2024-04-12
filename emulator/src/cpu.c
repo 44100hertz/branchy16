@@ -32,6 +32,8 @@ static void branch_step_binary(cpu_branch *br, word);
 static void branch_step_unary(cpu_branch *br, word);
 static void cpu_branch_create(cpu_branch *source, word pc, word bp);
 
+int (*emit_char)(int) = putchar;
+
 void cpu_init() {
     // Zero memory and branch state
     memset(cpu_memory, 0, sizeof(cpu_memory));
@@ -170,9 +172,9 @@ void branch_step_special(cpu_branch *br, word instr) {
         break;
     }
     case ITAG_PUTC: {
-        // Putchar = xxxxx --- ---- SSSS
+        // emit_char = xxxxx --- ---- SSSS
         word c = ARG_NIBBLE(0);
-        putchar(c);
+        emit_char(c);
         break;
     }
     case ITAG_COMPARE: {
