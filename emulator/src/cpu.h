@@ -11,24 +11,6 @@ enum {
     CPU_UNARY_MASK = 0b11110 << CPU_ITAG_OFFSET,
 };
 
-// See cpu.c for instruction documentation
-enum {
-    // 0xxxx special instructions
-    ITAG_LOAD = 0,
-    ITAG_STORE,
-    ITAG_JUMP,
-    ITAG_BRANCH,
-    ITAG_COMPARE,
-    ITAG_PUTC,
-    ITAG_HALT,
-    // UNUSED: 8-16
-    //
-    // 1xxxx binary arithmetic
-    ITAG_ADD = 0b10000,
-    // 1111x unary arithmetic; rest of operation encoded in low bits
-    ITAG_COPY = 0,
-};
-
 static inline word cpu_encode_unary(byte instr) {
     return CPU_UNARY_MASK | (instr >> 4 & 1) << 11 | (instr & 0xf);
 }

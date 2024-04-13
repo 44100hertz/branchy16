@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "consts.h"
+
 typedef struct {
     word reg[8];
     word bp;
@@ -193,7 +195,7 @@ void branch_step_special(cpu_branch *br, word instr) {
 }
 
 void branch_step_binary(cpu_branch *br, word instr) {
-    // Binary = xxxxx OOO AAAA BBBB
+    // Binary = 1xxxx OOO AAAA BBBB
     word out;
     word a = ARG_NIBBLE(4);
     word b = ARG_NIBBLE(0);
@@ -209,7 +211,7 @@ void branch_step_unary(cpu_branch *br, word instr) {
     word a = ARG_NIBBLE(4);
     word operation = cpu_decode_unary(instr);
     switch (operation) {
-    case ITAG_COPY: out = a; break;
+    case ITAG_UNARY_COPY: out = a; break;
     }
     br->reg[instr >> 8 & 0x7] = out;
 }
