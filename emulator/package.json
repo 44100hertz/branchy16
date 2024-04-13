@@ -7,7 +7,7 @@
     "dev": "./scripts/dev.sh",
     "test": "CFLAGS=-g make test && ./bin/branchy"
   },
-  "main": "./bin/branchy.mjs",
+  "main": "./bin/",
   "devDependencies": {
     "simple-file-watch": "^3.0.0"
   }

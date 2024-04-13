@@ -1,32 +1,37 @@
 import { createSignal } from "solid-js";
 import "./app.css";
 import cpu_mod from "branchy-cpu";
+import Terminal from "./Terminal";
 
 export default function App() {
-  const [term, setTerm] = createSignal('');
-  let test = () => {};
+  const [consoleText, setConsoleText] = createSignal('');
 
-  const appendChar = (c) => {
-    setTerm(term() + String.fromCharCode(c));
-    return c;
-  };
+  let test = () => { };
 
-  cpu_mod().then((cpu) => {
-    const appendCharPtr = cpu.addFunction(appendChar, 'ii');
+  function addChar(code: number) {
+    setConsoleText(consoleText() + String.fromCharCode(code))
+  }
+
+  cpu_mod().then((cpu: any) => {
+    const appendCharPtr = cpu.addFunction(addChar, 'ii');
     cpu._override_putchar(appendCharPtr);
+    let interval: any;
     test = () => {
-        cpu._cpu_init();
-        cpu._write_branching_hello();
-        for (let i = 0; i < 100; ++i) {
-            cpu._cpu_step();
-        }
+      if (interval) clearInterval(interval);
+      cpu._cpu_init();
+      cpu._write_branching_hello();
+      interval = setInterval(() => {
+        const running = cpu._cpu_step();
+        if (running == 0) clearInterval(interval);
+      }, 1);
     };
   });
 
   return (
     <main>
-      <h1>{term()}</h1>
+      <Terminal consoleText={consoleText} />
       <button class="increment" onClick={() => test()}>Emulate "hello world"</button>
     </main>
   );
 }
+

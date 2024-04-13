@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap');
+
+main {
+  font-family: "Fira Mono", monospace;
+}
+
+.console {
+  white-space: pre-wrap;
+  background: black;
+  color: white;
+  width: fit-content;
+  padding: 0.2em;
+  user-select: none;
+}
+
+.console:not(.floating):hover {
+  background: blue;
+}
+
+.console.floating {
+  position: absolute;
+  max-width: 60em;
+  max-height: calc(100vh - 4em);
+  overflow: scroll;
+  user-select: auto;
+}

@@ -14,7 +14,7 @@ test: outdir
 	$(OUT)
 
 wasm: outdir
-	$(CC) $(SOURCES) $(CFLAGS) $(EINCLUDES) -o ./bin/branchy.mjs
+	$(CC) $(SOURCES) $(CFLAGS) $(EINCLUDES) -o ./bin/index.mjs
 
 clean:
 	rm -r ./bin/
