@@ -1,15 +1,43 @@
 * General
 ** DONE basic arithmetic
 ** DONE branch wait for load
-** TODO create web ui
-** TODO create assembler
-
+** DONE create web app
+** TODO basic assembler for assembly JSON
+*** DONE design basic assembly JSON format
+*** TODO write hello_world_branching in TS
+*** TODO compile and run it
+** TODO disassembler/debugger
+*** TODO write assembly stringifiers
+** TODO assembler structure editor web ui
+*** TODO display assembly JSON on page
+*** TODO basic edit assembly JSON
+*** TODO load and save assembly JSON, plus localstorage
+*** TODO pixel editor
+** TODO Canvas-text overlay component
+Use canvas-text overlays to create fast and readable colored UIs. Basically, a nearest-scaled canvas which is the behind some monospaced text where each memory word is one pixel.
+** TODO memory viewer web ui
+*** TODO Global memory viewer
+Display global memory as a 16x16 grid (256 pages), but always select a particular page which is labeled and displayed above. Click on a page to view it.
+**** TODO Arrow keys and buttons to switch pages
+**** TODO Highlight most recent reads and writes by highlighting memory
+*** TODO Memory page viewer
+Display the selected page as a 64x16 grid of characters, aka a 16x16 grid of memory. Put addresses on the left and top.
+**** TODO show colors
+Use each 16-bit word as a means to generate color to aid viewing.
+Foreground text white, background colored.
+Use lch to keep it visually consistent.
+Top 8 bits determine hue, bottom 8 bits determine lightness 10%-50%. Saturation fixed at 70% or so.
+Experiment if that doesn't work.
+**** TODO allow memory to be edited by hand
+*** TODO display program counters in memory
+** TODO CPU viewer web ui
+*** TODO global branch grid
+*** TODO branch register and flag status
 * Testing
 ** DONE test unary encoding
 ** DONE ROM to test hello world
 ** DONE ROM to test branching
 ** TODO ROM to test arithmetic (multiply ROM)
-
 * Arithmetic
 ** DONE add more defaults to nibble arguments
 ** TODO more arithmetic
