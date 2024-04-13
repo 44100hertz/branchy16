@@ -26,7 +26,7 @@ Branchy16 boots by loading a 131kb ROM and starting a single branch at the first
 
 Each branch in Branchy16 has 8 general-purpose registers, a program counter, and a base pointer, each 16-bit. The base pointer is used for optional relative addressing, which is good for object-oriented design. Every relative load and store offsets the memory target by the base pointer.
 
-To start a branch, use the "branch" instruction with a target and a base pointer. To stop it, call "halt".
+To start a branch, use the "branch" instruction with a target and a base pointer. To stop it, use "halt".
 
 Branches store memory between cycles, meaning that every store will not affect loads until the next cycle. Multiple writes to the same memory location in one cycle OR each other.
 
