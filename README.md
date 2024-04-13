@@ -39,3 +39,11 @@ Branchy16 can write one character at a time to the console.
 ## Instruction set
 
 Look at emulator/src/cpu.c for the instruction set. Semantics for the assembler have not yet been decided, so it is hard to describe current operations.
+
+# Contributions and License
+
+This project is open-source under AGPL, meaning that any modifications must be open-sourced under AGPL, including forks that are hosted online.
+
+You're free to contribute to the main project, and the suggested starting point for contributions is TODO.org. For any pull requests, please edit TODO.org accordingly. If you have ideas, submit a PR that modifies TODO.org and we can talk about it.
+
+Thank you.
