@@ -8,13 +8,13 @@ export default function App() {
 
   let test = () => { };
 
-  function addChar(code: number) {
+  function addChar(_device: number, _addr: number, code: number) {
     setConsoleText(consoleText() + String.fromCharCode(code))
   }
 
   cpu_mod().then((cpu: any) => {
-    const appendCharPtr = cpu.addFunction(addChar, 'ii');
-    cpu._override_putchar(appendCharPtr);
+    const appendCharPtr = cpu.addFunction(addChar, 'viii');
+    cpu._set_poke_callback(appendCharPtr);
     let interval: any;
     test = () => {
       if (interval) clearInterval(interval);

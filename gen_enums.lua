@@ -7,9 +7,9 @@ local ops = {
     [0x2] = "Jump",
     [0x3] = "Branch",
     [0x4] = "Compare",
-    [0x5] = "Putc",
-    [0x6] = "Halt",
-    [0x7] = "Unused_7",
+    [0x5] = "Unused_5",
+    [0x6] = "Peek",
+    [0x7] = "Poke",
     [0x8] = "Unused_8",
     [0x9] = "Unused_9",
     [0xA] = "Unused_A",
@@ -17,7 +17,7 @@ local ops = {
     [0xC] = "Unused_C",
     [0xD] = "Unused_D",
     [0xE] = "Unused_E",
-    [0xF] = "Unused_F",
+    [0xF] = "Halt",
 };
 
 local binOps = {

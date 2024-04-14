@@ -11,9 +11,9 @@
     ITAG_JUMP = 0x2,
     ITAG_BRANCH = 0x3,
     ITAG_COMPARE = 0x4,
-    ITAG_PUTC = 0x5,
-    ITAG_HALT = 0x6,
-    ITAG_UNUSED_7 = 0x7,
+    ITAG_UNUSED_5 = 0x5,
+    ITAG_PEEK = 0x6,
+    ITAG_POKE = 0x7,
     ITAG_UNUSED_8 = 0x8,
     ITAG_UNUSED_9 = 0x9,
     ITAG_UNUSED_A = 0xA,
@@ -21,7 +21,7 @@
     ITAG_UNUSED_C = 0xC,
     ITAG_UNUSED_D = 0xD,
     ITAG_UNUSED_E = 0xE,
-    ITAG_UNUSED_F = 0xF,
+    ITAG_HALT = 0xF,
 };
 
 enum BinOp {

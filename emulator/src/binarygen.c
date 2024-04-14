@@ -51,8 +51,8 @@ void write_branching_hello() {
     // second branch loop -- write chars twice
     offset = writer_offset;
     WI(LOAD, 0b110, R0, CONST_0);
-    WI(PUTC, 0, 0, R0);
-    WI(PUTC, 0, 0, R0);
+    WI(POKE, 0, 0, R0);
+    WI(POKE, 0, 0, R0);
     WI(JUMP, 0, IMMED, COND_ALWAYS);
     WW(writer_offset);
 }
@@ -70,7 +70,7 @@ void write_hello() {
     WI(COMPARE, 0, R1, CONST_0);
     WI(JUMP, 0, IMMED, COND_EQ);
     word done_offset = offset++;
-    WI(PUTC, 0, 0, R1);
+    WI(POKE, 0, 0, R1);
     WI(ADD, R0, R0, CONST_1);
     WI(JUMP, 0, IMMED, COND_ALWAYS);
     WW(loop_offset);

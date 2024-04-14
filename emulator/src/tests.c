@@ -20,9 +20,8 @@ static void clear_string() {
     memset(char_buf, 0, sizeof(char_buf));
     char_buf_pos = 0;
 }
-static int test_putchar(int c) {
-    char_buf[char_buf_pos++] = c;
-    return c;
+static void poke_to_buf(word device, word addr, word value) {
+    char_buf[char_buf_pos++] = value;
 }
 static void test_string(char *test) {
     if (strncmp(char_buf, test, sizeof(char_buf))) {
@@ -33,7 +32,7 @@ static void test_string(char *test) {
 }
 
 int main(int _argc, char **_argv) {
-    override_putchar(test_putchar);
+    set_poke_callback(poke_to_buf);
     puts("-------- Test: Unary Encode");
     test_unary_encode();
     puts("-------- Test: Hello");

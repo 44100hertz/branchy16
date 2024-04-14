@@ -34,8 +34,12 @@ static void branch_step_binary(cpu_branch *br, word);
 static void branch_step_unary(cpu_branch *br, word);
 static void cpu_branch_create(cpu_branch *source, word pc, word bp);
 
-static int (*emit_char)(int) = putchar;
-void override_putchar(int (*fn)(int)) { emit_char = fn; }
+static void print_cb(word device, word addr, word value) { putchar(value); }
+static word read_cb(word device, word addr) { return getchar(); }
+static poke_cb poke = print_cb;
+static peek_cb peek = read_cb;
+void set_poke_callback(poke_cb fn) { poke = fn; }
+void set_peek_callback(peek_cb fn) { peek = fn; }
 
 void cpu_init() {
     // Zero memory and branch state
@@ -174,12 +178,6 @@ void branch_step_special(cpu_branch *br, word instr) {
         cpu_branch_create(br, addr, offset);
         break;
     }
-    case ITAG_PUTC: {
-        // emit_char = xxxxx --- ---- SSSS
-        word c = ARG_NIBBLE(0);
-        emit_char(c);
-        break;
-    }
     case ITAG_COMPARE: {
         // Compare = xxxxx --- -AAA BBBB
         word a = br->reg[instr >> 4 & 0x7];
@@ -188,6 +186,21 @@ void branch_step_special(cpu_branch *br, word instr) {
         br->compare_flags = (a == b ? COND_FLAG_EQ : 0) |
                             (a < b ? COND_FLAG_LT : 0) |
                             (a > b ? COND_FLAG_GT : 0);
+        break;
+    }
+    case ITAG_POKE: {
+        // poke = xxxxx PPP AAAA VVVV
+        word device = instr >> 8 & 0x7;
+        word addr = ARG_NIBBLE(4);
+        word value = ARG_NIBBLE(0);
+        poke(device, addr, value);
+        break;
+    }
+    case ITAG_PEEK: {
+        // poke = xxxxx PPP _DDD AAAA
+        word device = instr >> 8 & 0x7;
+        word addr = ARG_NIBBLE(0);
+        br->reg[instr >> 4 & 0x7] = peek(device, addr);
         break;
     }
     case ITAG_HALT: br->running = false; break;

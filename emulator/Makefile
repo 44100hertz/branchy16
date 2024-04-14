@@ -4,7 +4,13 @@ CC?=$(CC)
 CFLAGS:=$(CFLAGS) -std=c2x
 SOURCES=src/*.c
 
-EINCLUDES=-sEXPORTED_FUNCTIONS="_cpu_init,_cpu_step,_override_putchar,_write_branching_hello,_main" -sEXPORTED_RUNTIME_METHODS="cwrap,addFunction" -sALLOW_TABLE_GROWTH
+EINCLUDES=-sEXPORTED_FUNCTIONS="\
+					_cpu_init,_cpu_step,\
+					_set_peek_callback,_set_poke_callback,\
+					_write_branching_hello,\
+					_main"\
+					-sEXPORTED_RUNTIME_METHODS="cwrap,addFunction"\
+					-sALLOW_TABLE_GROWTH
 
 outdir:
 	mkdir -p $(OUTDIR)

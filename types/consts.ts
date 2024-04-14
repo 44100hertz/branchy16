@@ -11,9 +11,9 @@
     Jump = 0x2,
     Branch = 0x3,
     Compare = 0x4,
-    Putc = 0x5,
-    Halt = 0x6,
-    Unused_7 = 0x7,
+    Unused_5 = 0x5,
+    Peek = 0x6,
+    Poke = 0x7,
     Unused_8 = 0x8,
     Unused_9 = 0x9,
     Unused_A = 0xA,
@@ -21,7 +21,7 @@
     Unused_C = 0xC,
     Unused_D = 0xD,
     Unused_E = 0xE,
-    Unused_F = 0xF,
+    Halt = 0xF,
 };
 
 export enum BinOp {
