@@ -33,6 +33,8 @@ Experiment if that doesn't work.
 ** TODO CPU viewer web ui
 *** TODO global branch grid
 *** TODO branch register and flag status
+** TODO screen
+*** TODO design screen spec
 * Testing
 ** DONE test unary encoding
 ** DONE ROM to test hello world
