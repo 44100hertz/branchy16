@@ -14,7 +14,6 @@ typedef struct {
     // special state for memory operations
     word mem_addr;      // target addr for memory operations
     word mem_val;       // register or value for memory operations
-    bool mem_indirect;  // enable indirection on memory access
     bool store_enable;  // do a store operation
     bool mem_wait;      // wait for another branch to store or load
 
@@ -34,8 +33,8 @@ static void branch_step_binary(cpu_branch *br, word);
 static void branch_step_unary(cpu_branch *br, word);
 static void cpu_branch_create(cpu_branch *source, word pc, word bp);
 
-static void print_cb(word device, word addr, word value) { putchar(value); }
-static word read_cb(word device, word addr) { return getchar(); }
+static void print_cb(word addr, word value) { putchar(value); }
+static word read_cb(word addr) { return getchar(); }
 static poke_cb poke = print_cb;
 static peek_cb peek = read_cb;
 void set_poke_callback(poke_cb fn) { poke = fn; }
@@ -70,20 +69,23 @@ bool cpu_step() {
     for (cpu_branch *br = cpu_branches; br < last; ++br) {
         if (br->store_enable) {
             word addr = br->mem_addr;
-            if (br->mem_indirect) addr = cpu_memory[addr];
-            // first write clears memory addr
-            if (!did_write[addr]) cpu_memory[addr] = 0;
-            did_write[addr] = true;
-            cpu_memory[addr] |= br->mem_val;
+            if (addr >= CPU_MEMSIZE) {
+                poke(addr & 0xfff, br->mem_val);
+            } else {
+                // first write clears memory addr
+                if (!did_write[addr]) cpu_memory[addr] = 0;
+                did_write[addr] = true;
+                cpu_memory[addr] |= br->mem_val;
+            }
         }
         br->store_enable = false;
     }
 
-    // clear store waits
+    // clear load waits
     for (cpu_branch *br = cpu_branches; br < last; ++br) {
-        if (!br->store_enable && br->mem_wait && did_write[br->mem_addr]) {
+        if (br->mem_wait && did_write[br->mem_addr]) {
             br->reg[br->mem_val] = cpu_memory[br->mem_addr];
-            // only unlock one waiting branch at a time
+            // only unlock one waiting branch at a time, except for I/O
             did_write[br->mem_addr] = false;
             br->mem_wait = false;
         }
@@ -120,7 +122,7 @@ void branch_step(cpu_branch *br) {
 void branch_step_special(cpu_branch *br, word instr) {
     switch (instr >> CPU_ITAG_OFFSET) {
     case ITAG_LOAD: {
-        // Load = xxxxx woi -DDD TTTT
+        // Load = xxxxx wo- -DDD TTTT
         // T = address target
         word target = ARG_NIBBLE(0);
         // o = use relative address
@@ -135,21 +137,18 @@ void branch_step_special(cpu_branch *br, word instr) {
             br->mem_val = dest;
         } else {
             // D = destination register
-            // i = use indirect
-            br->reg[dest] = cpu_load(target, instr & (1 << 8));
+            br->reg[dest] = cpu_load(target);
         }
         break;
     }
     case ITAG_STORE: {
-        // Store = xxxxx -oi DDDD -SSS
+        // Store = xxxxx -o- DDDD -SSS
         // Store does not immediately store the value, but instead sets up a
         // store. This allows writes to happen after all loads have
         // finished.
         br->store_enable = true;
         // S = source register
         br->mem_val = br->reg[instr & 0x7];
-        // A = addressing indirect
-        br->mem_indirect = instr & (1 << 8);
         // D = destination
         word target = ARG_NIBBLE(4);
         // o = use relative address
@@ -168,11 +167,9 @@ void branch_step_special(cpu_branch *br, word instr) {
         break;
     }
     case ITAG_BRANCH: {
-        // Branch = xxxxx --i AAAA OOOO
+        // Branch = xxxxx --- AAAA OOOO
         // A = register or immediate
         word addr = ARG_NIBBLE(4);
-        // i = branch indirect (only for immediate value)
-        if (instr & 1 << 8 && instr & 1 << 7) addr = cpu_load(addr, 0);
         // O = register or immediate
         word offset = ARG_NIBBLE(0);
         cpu_branch_create(br, addr, offset);
@@ -186,21 +183,6 @@ void branch_step_special(cpu_branch *br, word instr) {
         br->compare_flags = (a == b ? COND_FLAG_EQ : 0) |
                             (a < b ? COND_FLAG_LT : 0) |
                             (a > b ? COND_FLAG_GT : 0);
-        break;
-    }
-    case ITAG_POKE: {
-        // poke = xxxxx PPP AAAA VVVV
-        word device = instr >> 8 & 0x7;
-        word addr = ARG_NIBBLE(4);
-        word value = ARG_NIBBLE(0);
-        poke(device, addr, value);
-        break;
-    }
-    case ITAG_PEEK: {
-        // poke = xxxxx PPP _DDD AAAA
-        word device = instr >> 8 & 0x7;
-        word addr = ARG_NIBBLE(0);
-        br->reg[instr >> 4 & 0x7] = peek(device, addr);
         break;
     }
     case ITAG_HALT: br->running = false; break;
@@ -229,7 +211,11 @@ void branch_step_unary(cpu_branch *br, word instr) {
     br->reg[instr >> 8 & 0x7] = out;
 }
 
-word branch_fetch(cpu_branch *br) { return cpu_memory[br->pc++]; }
+word branch_fetch(cpu_branch *br) {
+    word out = cpu_memory[br->pc];
+    br->pc = (br->pc + 1) % CPU_MEMSIZE;
+    return out;
+}
 
 // Create a branch from a running branch
 void cpu_branch_create(cpu_branch *source, word pc, word bp) {
@@ -254,12 +240,38 @@ void cpu_branch_create(cpu_branch *source, word pc, word bp) {
     cpu_branches[new_index].bp = bp;
 }
 
-void cpu_store(word addr, word value, bool indirect) {
-    if (indirect) addr = cpu_memory[addr];
-    cpu_memory[addr] = value;
+void cpu_store(word addr, word value) {
+    if (addr >= CPU_MEMSIZE) {
+        poke(addr & 0xfff, value);
+    } else {
+        cpu_memory[addr] = value;
+    }
 }
 
-word cpu_load(word addr, bool indirect) {
-    if (indirect) addr = cpu_memory[addr];
+word cpu_load(word addr) {
+    if (addr >= CPU_MEMSIZE) {
+        return peek(addr & 0xfff);
+    } else {
+        return cpu_memory[addr];
+    }
+}
+
+void io_store(word addr, word value) {
+    cpu_branch *last = &cpu_branches[CPU_NUM_BRANCHES];
+    if (addr >= CPU_MEMSIZE) {
+        return;
+    }
+    for (cpu_branch *br = cpu_branches; br < last; ++br) {
+        if (br->mem_wait && br->mem_addr == addr) {
+            br->reg[br->mem_val] = value;
+            br->mem_wait = false;
+        }
+    }
+}
+
+word io_load(word addr) {
+    if (addr >= CPU_MEMSIZE) {
+        return 0;
+    }
     return cpu_memory[addr];
 }

@@ -6,6 +6,7 @@ SOURCES=src/*.c
 
 EINCLUDES=-sEXPORTED_FUNCTIONS="\
 					_cpu_init,_cpu_step,\
+					_io_load,_io_store,\
 					_set_peek_callback,_set_poke_callback,\
 					_write_branching_hello,\
 					_main"\

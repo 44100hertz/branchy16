@@ -3,11 +3,11 @@
 
 typedef uint8_t byte;
 typedef uint16_t word;
-typedef void (*poke_cb)(word device, word addr, word value);
-typedef word (*peek_cb)(word device, word addr);
+typedef void (*poke_cb)(word addr, word value);
+typedef word (*peek_cb)(word addr);
 
 enum {
-    CPU_MEMSIZE = 1 << 16,
+    CPU_MEMSIZE = 0xf000,
     CPU_NUM_BRANCHES = 1024,
     CPU_ITAG_OFFSET = 11,
     CPU_UNARY_MASK = 0b11110 << CPU_ITAG_OFFSET,
@@ -29,8 +29,10 @@ enum {
 
 void cpu_init();
 bool cpu_step();  // Returns true if CPU is still running
-void cpu_store(word addr, word value, bool indirect);
-word cpu_load(word addr, bool indirect);
+void cpu_store(word addr, word value);
+word cpu_load(word addr);
 
 void set_poke_callback(poke_cb);
 void set_peek_callback(peek_cb);
+void io_store(word addr, word value);
+word io_load(word addr);

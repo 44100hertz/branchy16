@@ -20,12 +20,12 @@ static void clear_string() {
     memset(char_buf, 0, sizeof(char_buf));
     char_buf_pos = 0;
 }
-static void poke_to_buf(word device, word addr, word value) {
+static void poke_to_buf(word addr, word value) {
     char_buf[char_buf_pos++] = value;
 }
 static void test_string(char *test) {
     if (strncmp(char_buf, test, sizeof(char_buf))) {
-        printf("FAIL\nexpected\n%s\ngot\n%s\n", test, char_buf);
+        printf("FAIL\nexpected: '%s'\ngot: '%s'\n", test, char_buf);
     } else {
         puts("PASS");
     }

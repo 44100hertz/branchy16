@@ -4,16 +4,14 @@
 #include "cpu.h"
 
 // write instruction word
-#define WW(word) (cpu_store(offset, word, false), offset++)
+#define WW(word) (cpu_store(offset, word), offset++)
 // write special or binary word
-#define WI(instr, n0, n1, n2)                                                 \
-    (cpu_store(offset, (ITAG_##instr) << 11 | n0 << 8 | n1 << 4 | n2, false), \
-     offset++)
+#define WI(instr, n0, n1, n2) \
+    (cpu_store(offset, (ITAG_##instr) << 11 | n0 << 8 | n1 << 4 | n2), offset++)
 // write unary instruction word
-#define WU(instr, n0, n1)                                                \
-    (cpu_store(offset,                                                   \
-               cpu_encode_unary(ITAG_UNARY_##instr) | n0 << 8 | n1 << 4, \
-               false),                                                   \
+#define WU(instr, n0, n1)                                                 \
+    (cpu_store(offset,                                                    \
+               cpu_encode_unary(ITAG_UNARY_##instr) | n0 << 8 | n1 << 4), \
      offset++)
 
 void write_branching_hello() {
@@ -41,18 +39,21 @@ void write_branching_hello() {
     WI(JUMP, 0, IMMED, COND_ALWAYS);
     WW(loop_offset);
     // done:
-    cpu_store(done_offset, offset, 0);
-    WW(ITAG_HALT);
+    cpu_store(done_offset, offset);
+    WI(HALT, 0, 0, 0);
 
-    cpu_store(hello_offset, offset, 0);
+    cpu_store(hello_offset, offset);
     char *hello = "hello, world\n";
     for (char *c = hello; *c != 0; ++c) WW(*c);
+    WW(0);
 
     // second branch loop -- write chars twice
     offset = writer_offset;
     WI(LOAD, 0b110, R0, CONST_0);
-    WI(POKE, 0, 0, R0);
-    WI(POKE, 0, 0, R0);
+    WI(STORE, 0, IMMED, R0);
+    WW(0xf000);
+    WI(STORE, 0, IMMED, R0);
+    WW(0xf000);
     WI(JUMP, 0, IMMED, COND_ALWAYS);
     WW(writer_offset);
 }
@@ -65,21 +66,21 @@ void write_hello() {
     WU(COPY, R0, IMMED);
     word hello_offset = offset++;
     // loop:
-    word loop_offset = offset;
-    WI(LOAD, 0b000, R1, R0);
+    word loop_offset = WI(LOAD, 0, R1, R0);
     WI(COMPARE, 0, R1, CONST_0);
     WI(JUMP, 0, IMMED, COND_EQ);
     word done_offset = offset++;
-    WI(POKE, 0, 0, R1);
+    WI(STORE, 0, IMMED, R1);
+    WW(0xf000);
     WI(ADD, R0, R0, CONST_1);
     WI(JUMP, 0, IMMED, COND_ALWAYS);
     WW(loop_offset);
     // done:
-    cpu_store(done_offset, offset, 0);
-    WW(ITAG_HALT);
+    cpu_store(done_offset, offset);
+    WI(HALT, 0, 0, 0);
 
-    cpu_store(hello_offset, offset, 0);
-
+    cpu_store(hello_offset, offset);
     char *hello = "hello, world\n";
     for (char *c = hello; *c != 0; ++c) WW(*c);
+    WW(0);
 }
