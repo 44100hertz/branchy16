@@ -18,6 +18,14 @@ NIXOS: look at `emulator/scripts/fix-emscripten-nix`. This is the kind of thing 
 
 Branchy16 is WIP, so all of this can change. A full programming guide will be made as it solidifies. For details on the current implementation, look at the C source in emulator/.
 
+## Clock speed
+
+Branchy16 has a 153.6khz clock speed.
+
+Clock speed is 8 cycles per 60hz scan line, calculated as 60fps * 320 scan lines * 8 cycles = 153.6khz.
+
+With all available branches in action, branchy16 is running a rough equivalent to 37.5mhz.
+
 ## Addressing
 
 Branchy16 is 16-bit. Addressing is 16 bits, every instruction is 16 bits, and every register is 16 bits. This limits address space to 128KiB, which is shared by every branch. The first 120KiB are general-purpose, and the last 8KiB are used for devices.
@@ -27,6 +35,8 @@ Branchy16 is 16-bit. Addressing is 16 bits, every instruction is 16 bits, and ev
 Branchy16 boots by loading a 120KiB ROM and starting a single branch at the first word of memory. Execution ends when every branch is either halted or waiting.
 
 ## Branches
+
+Branchy16 can run up to 256 branches in parallel.
 
 Each branch in Branchy16 has 8 general-purpose registers, a program counter, and a base pointer, each 16-bit. The base pointer is used for optional relative addressing, which is good for object-oriented design. Every relative load and store offsets the memory target by the base pointer.
 
@@ -40,13 +50,21 @@ Branches may share data more predictably using a load-wait instruction. The wait
 
 The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF000-0xFFFF are I/O addresses.
 
-Loading from an I/O address will access a device, which returns a word based on the given address and may have side effects. For timing-sensitive values such as screen refresh or user input, load-waiting an I/O address is used. Unlike standard stores, stores from I/O devices will unlock every load-waited branch. However, load-waiting an untimed I/O address will lock the branch forever.
+Loading from an I/O address will access a device, which returns a word based on the given address and may have side effects. For timing-sensitive values such as screen refresh or user input, load-waiting an I/O address called a 'lock' is used. Unlike standard stores, stores from I/O devices will unlock every load-waited branch. Load-waiting an untimed I/O address will instantly resolve a value and is the same as a regular load.
 
 Storing to an I/O address will send that value to the device and may trigger side-effects.
 
-### Devices
+### Console
 
-Currently, the only device is character output. Every I/O store will write a character to the console.
+Write to 0xf000 to write a character to the console.
+
+### Screen and Timing
+
+The PPU is the device at 0xf100-0xf1ff that is responsible for drawing to the screen.
+
+Its output resolution is 240x240 with a 320x320 scan region. Overall, the PPU draws 240 scanlines for 1920 CPU cycles, then draws nothing for 640 CPU cycles called VBLANK. Within each scanline, the PPU draws 240 pixels for 6 cycles, then draws nothing for 2 CPU cycles called HBLANK. Writes to the GPU are ignored while it is drawing, but can be performed during either VBLANK or HBLANK.
+
+The VBLANK lock at 0xf100 can be load-waited for any number of branches to resume execution at the start of VBLANK. Likewise, the scanline counter will write at the start of any visible scanline 0-239, and after 6 cycles it gives way to HBLANK.
 
 ## Instruction set
 
