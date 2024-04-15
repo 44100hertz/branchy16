@@ -38,7 +38,7 @@ Branches may share data more predictably using a load-wait instruction. The wait
 
 ## I/O and Devices
 
-The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF000-0xFFFF are hardware access.
+The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF000-0xFFFF are I/O addresses.
 
 Loading from an I/O address will access a device, which returns a word based on the given address and may have side effects. For timing-sensitive values such as screen refresh or user input, load-waiting an I/O address is used. Unlike standard stores, stores from I/O devices will unlock every load-waited branch. However, load-waiting an untimed I/O address will lock the branch forever.
 
