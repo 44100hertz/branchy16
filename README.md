@@ -44,8 +44,6 @@ Loading from an I/O address will access a device, which returns a word based on 
 
 Storing to an I/O address will send that value to the device and may trigger side-effects.
 
-Indirect loads and stores cannot get pointers from I/O devices, and will have no effect or will return 0. Of course pointers can point to I/O addresses, but I/O addresses cannot be used as pointers.
-
 ### Devices
 
 Currently, the only device is character output. Every I/O store will write a character to the console.
