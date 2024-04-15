@@ -52,10 +52,6 @@ Currently, the only device is character output. Every I/O store will write a cha
 
 Look at emulator/src/cpu.c for the instruction set. Semantics for the assembler have not yet been decided, so it is hard to describe current operations.
 
-### Devices
-
-Writing to 0xF000 will output a character to the terminal.
-
 # Contributions and License
 
 This project is open-source under AGPL, meaning that any modifications must be open-sourced under AGPL, including forks that are hosted online.
