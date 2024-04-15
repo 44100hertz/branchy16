@@ -16,13 +16,15 @@ outdir:
 	mkdir -p $(OUTDIR)
 
 test: outdir
-	$(CC) $(SOURCES) $(CFLAGS) -Wall -DTESTING -o $(OUT)
+	$(CC) $(SOURCES) $(CFLAGS) -g -Wall -DTESTING -o $(OUT)
 	$(OUT)
 
 wasm: outdir
 	$(CC) $(SOURCES) $(CFLAGS) $(EINCLUDES) -o ./bin/index.mjs
 
 clean:
-	rm -r ./bin/
+	rm -f ./bin/index.mjs
+	rm -f ./bin/index.wasm
+	rm -f ./bin/branchy
 
 .PHONY: outdir test wasm clean
