@@ -4,12 +4,21 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+dependencies:
+  '@types/emscripten':
+    specifier: ^1.39.10
+    version: 1.39.10
+
 devDependencies:
   simple-file-watch:
     specifier: ^3.0.0
     version: 3.0.0
 
 packages:
+
+  /@types/emscripten@1.39.10:
+    resolution: {integrity: sha512-TB/6hBkYQJxsZHSqyeuO1Jt0AB/bW6G7rHt9g7lML7SOF6lbgcHvw/Lr+69iqN0qxgXLhWKScAon73JNnptuDw==}
+    dev: false
 
   /file-extension@3.1.2:
     resolution: {integrity: sha512-Ae7J6Nz0kQvUOesn4+By0QJc16hpuh+zOM9w7pb6N8pjret2d0o9cKix+iOgNiT32rZSDYJINoDAPRs/VsBiuA==}

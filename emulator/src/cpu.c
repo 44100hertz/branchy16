@@ -21,7 +21,6 @@ typedef struct {
 } cpu_branch;
 
 static word cpu_memory[CPU_MEMSIZE];
-static bool io_locks[IO_SIZE];
 static cpu_branch cpu_branches[CPU_NUM_BRANCHES];
 
 static inline bool branch_running(cpu_branch *br) {
@@ -36,17 +35,21 @@ static void branch_start(cpu_branch *source, word pc, word bp);
 static void branch_clear_loadwait(cpu_branch *br, word value);
 
 static void print_cb(word addr, word value) { putchar(value); }
-static word read_cb(word addr) { return getchar(); }
-static poke_cb poke = print_cb;
-static peek_cb peek = read_cb;
-void set_poke_callback(poke_cb fn) { poke = fn; }
-void set_peek_callback(peek_cb fn) { peek = fn; }
+
+static poke_cb device_poke_cbs[0x10] = {[0 ... 15] = print_cb};
+
+static void poke(word addr, word value) {
+    device_poke_cbs[addr >> 8 & 0xf](addr & 0xff, value);
+}
+
+void set_poke_callback(int index, poke_cb fn) {
+    device_poke_cbs[index & 0xf] = fn;
+}
 
 void cpu_init() {
     // Zero memory and branch state
     memset(cpu_memory, 0, sizeof(cpu_memory));
     memset(cpu_branches, 0, sizeof(cpu_branches));
-    memset(io_locks, 0, sizeof(io_locks));
     // Run branch 0
     cpu_branches[0] = (cpu_branch){
         .running = true,
@@ -81,7 +84,8 @@ bool cpu_step() {
         if (br->store_enable) {
             word addr = br->mem_addr;
             if (addr >= CPU_MEMSIZE) {
-                poke(addr & 0xfff, br->mem_val);
+                // pokes are executed sequentially in any order
+                poke(addr, br->mem_val);
             } else {
                 // first write clears memory addr
                 if (!did_write[addr]) cpu_memory[addr] = 0;
@@ -92,6 +96,14 @@ bool cpu_step() {
         br->store_enable = false;
     }
 
+    return running;
+}
+
+bool cpu_step_multiple(int steps) {
+    bool running = true;
+    for (int i = 0; i < steps && running; ++i) {
+        running = cpu_step();
+    }
     return running;
 }
 
@@ -131,9 +143,7 @@ void branch_step_special(cpu_branch *br, word instr) {
         // D = destination. If d is set, do no load.
         uintptr_t dest = instr >> 4 & 0xf;
         // w = wait for another branch to write, then load
-        if (instr & (1 << 10) &&
-            (target < CPU_MEMSIZE || io_locks[target & 0xfff]))
-        {
+        if (instr & (1 << 10)) {
             br->mem_addr = target;
             br->load_wait = true;
             br->store_enable = false;
@@ -146,15 +156,15 @@ void branch_step_special(cpu_branch *br, word instr) {
         break;
     }
     case ITAG_STORE: {
-        // Store = xxxxx -o- DDDD -SSS
+        // Store = xxxxx -o- DDDD SSSS
         // Store does not immediately store the value, but instead sets up a
         // store. This allows writes to happen after all loads have
         // finished.
         br->store_enable = true;
-        // S = source register
-        br->mem_val = br->reg[instr & 0x7];
         // D = destination
         word target = ARG_NIBBLE(4);
+        // S = source register
+        br->mem_val = ARG_NIBBLE(0);
         // o = use relative address
         if (instr & (1 << 9)) target += br->bp;
         br->mem_addr = target;
@@ -261,7 +271,7 @@ void cpu_store(word addr, word value) {
 
 word cpu_load(word addr) {
     if (addr >= CPU_MEMSIZE) {
-        return peek(addr & 0xfff);
+        return 0;
     } else {
         return cpu_memory[addr];
     }
@@ -269,8 +279,6 @@ word cpu_load(word addr) {
 
 void io_store(word addr, word value) {
     addr = addr | 0xf000;
-    word addr_lo = addr & 0xfff;
-    io_locks[addr_lo] = false;
 
     cpu_branch *last = &cpu_branches[CPU_NUM_BRANCHES];
     for (cpu_branch *br = cpu_branches; br < last; ++br) {
@@ -286,5 +294,3 @@ word io_load(word addr) {
     }
     return cpu_memory[addr];
 }
-
-void io_lock(word addr) { io_locks[addr & 0xfff] = true; }

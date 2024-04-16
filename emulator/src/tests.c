@@ -32,7 +32,7 @@ static void test_string(char *test) {
 }
 
 int main(int _argc, char **_argv) {
-    set_poke_callback(poke_to_buf);
+    set_poke_callback(0, poke_to_buf);
     puts("-------- Test: Unary Encode");
     test_unary_encode();
     puts("-------- Test: Hello");

@@ -84,3 +84,15 @@ void write_hello() {
     for (char *c = hello; *c != 0; ++c) WW(*c);
     WW(0);
 }
+
+void write_display_busyloop() {
+    // spam BG color writes
+    word offset = 0;
+    word loop = WI(STORE, 0, IMMED, R0);  // write background color
+    WW(0xf10f);                           //
+    WI(STORE, 0, IMMED, R0);              // write char
+    WW(0xf000);                           //
+    WI(ADD, R0, R0, CONST_1);             // increment background color
+    WI(JUMP, 0, IMMED, COND_ALWAYS);      // loop
+    WW(loop);
+}

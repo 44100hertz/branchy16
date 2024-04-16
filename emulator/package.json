@@ -10,5 +10,8 @@
   "main": "./bin/",
   "devDependencies": {
     "simple-file-watch": "^3.0.0"
+  },
+  "dependencies": {
+    "@types/emscripten": "^1.39.10"
   }
 }

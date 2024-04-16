@@ -30,11 +30,10 @@ enum {
 
 void cpu_init();
 bool cpu_step();  // Returns true if CPU is still running
+bool cpu_step_multiple(int steps);
 void cpu_store(word addr, word value);
 word cpu_load(word addr);
 
-void set_poke_callback(poke_cb);
-void set_peek_callback(peek_cb);
+void set_poke_callback(int device, poke_cb);
 void io_store(word addr, word value);
 word io_load(word addr);
-void io_lock(word addr);

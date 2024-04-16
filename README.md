@@ -50,7 +50,7 @@ Branches may share data more predictably using a load-wait instruction. The wait
 
 The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF000-0xFFFF are I/O addresses.
 
-Loading from an I/O address will access a device, which returns a word based on the given address and may have side effects. For timing-sensitive values such as screen refresh or user input, load-waiting an I/O address called a 'lock' is used. Unlike standard stores, stores from I/O devices will unlock every load-waited branch on the same cycle rather than the next. Load-waiting an untimed I/O address will instantly resolve a value and is the same as a regular load.
+Loads from I/O addresses must be load-waited in order to return a value other than 0. When an I/O device stores to that address, it will unlock every load-waited branch for that address on the same cycle. However, load-waiting a non-readable I/O address will lock that branch forever.
 
 Storing to an I/O address will send that value to the device and may trigger side-effects.
 
