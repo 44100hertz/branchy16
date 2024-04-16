@@ -3,8 +3,8 @@
   "type": "module",
   "scripts": {
     "build": "CFLAGS=-O3 emmake make src/ wasm",
-    "install": "CFLAGS=-g emmake make wasm",
-    "dev": "./scripts/dev.sh",
+    "install": "./scripts/dev.sh",
+    "dev": "WASM_WATCH=1 ./scripts/dev.sh",
     "test": "CFLAGS=-g make test && ./bin/branchy"
   },
   "main": "./bin/",
