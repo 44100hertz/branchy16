@@ -44,13 +44,13 @@ To start a branch, use the "branch" instruction with a target and a base pointer
 
 Branches store memory between cycles, meaning that every store will not affect loads until the next cycle. Multiple writes to the same memory location in one cycle OR each other.
 
-Branches may share data more predictably using a load-wait instruction. The waiting branch will execute a load only after another branch stores to the target cell, on the same cycle as the store. In the case of multiple load-waits on the same cell, each store to a target cell will only unlock a single branch, allowing for easy creation of mutexes.
+Branches may share data more predictably using a load-wait instruction. The waiting branch will execute a load only after another branch stores to the target cell, on the next cycle as the store. In the case of multiple load-waits on the same cell, each store to a target cell will only unlock a single branch, allowing for easy creation of mutexes.
 
 ## I/O and Devices
 
 The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF000-0xFFFF are I/O addresses.
 
-Loading from an I/O address will access a device, which returns a word based on the given address and may have side effects. For timing-sensitive values such as screen refresh or user input, load-waiting an I/O address called a 'lock' is used. Unlike standard stores, stores from I/O devices will unlock every load-waited branch. Load-waiting an untimed I/O address will instantly resolve a value and is the same as a regular load.
+Loading from an I/O address will access a device, which returns a word based on the given address and may have side effects. For timing-sensitive values such as screen refresh or user input, load-waiting an I/O address called a 'lock' is used. Unlike standard stores, stores from I/O devices will unlock every load-waited branch on the same cycle rather than the next. Load-waiting an untimed I/O address will instantly resolve a value and is the same as a regular load.
 
 Storing to an I/O address will send that value to the device and may trigger side-effects.
 
@@ -60,7 +60,7 @@ Write to 0xf000 to write a character to the console.
 
 ### Screen and Timing
 
-The PPU is the device at 0xf100-0xf1ff that is responsible for drawing to the screen.
+The PPU is a device at 0xf100-0xf1ff that is responsible for drawing to the screen. It shares RAM with the CPU, which it uses as input for drawing.
 
 Its output resolution is 240x240 with a 320x320 scan region. Overall, the PPU draws 240 scanlines for 1920 CPU cycles, then draws nothing for 640 CPU cycles called VBLANK. Within each scanline, the PPU draws 240 pixels for 6 cycles, then draws nothing for 2 CPU cycles called HBLANK. Writes to the GPU are ignored while it is drawing, but can be performed during either VBLANK or HBLANK.
 

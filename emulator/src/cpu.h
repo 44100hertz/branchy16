@@ -8,7 +8,8 @@ typedef word (*peek_cb)(word addr);
 
 enum {
     CPU_MEMSIZE = 0xf000,
-    CPU_NUM_BRANCHES = 1024,
+    IO_SIZE = 0x1000,
+    CPU_NUM_BRANCHES = 0x100,
     CPU_ITAG_OFFSET = 11,
     CPU_UNARY_MASK = 0b11110 << CPU_ITAG_OFFSET,
 };
@@ -36,3 +37,4 @@ void set_poke_callback(poke_cb);
 void set_peek_callback(peek_cb);
 void io_store(word addr, word value);
 word io_load(word addr);
+void io_lock(word addr);
