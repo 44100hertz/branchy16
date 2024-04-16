@@ -70,8 +70,8 @@ const CYCLES_PER_HLINE = CYCLES_PER_HBLANK + CYCLES_PER_HDRAW;
 const VDRAW_LINES = 240;
 const VBLANK_LINES = 80;
 const ADDR_VBLANK_LOCK = 0xf100;
-const ADDR_SCANLINE_COUNT = 0xf100;
-const ADDR_BG_COLOR = 0x00f;
+const ADDR_SCANLINE_COUNT = 0xf101;
+const ADDR_BG_COLOR = 0xf10f;
 
 function runDisplayFrame(cpu: Cpu): boolean {
   cpu._io_store(ADDR_VBLANK_LOCK, 0);
