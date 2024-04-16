@@ -34,7 +34,14 @@ Experiment if that doesn't work.
 *** TODO global branch grid
 *** TODO branch register and flag status
 ** TODO screen
-*** TODO design screen spec
+*** DONE design screen spec
+*** DONE create bg_color poke test ROM
+*** DONE create structure for screen component
+*** TODO implement bg_color display
+*** TODO create tilemap test ROM
+*** TODO implement tilemap rendering
+*** TODO create sprite test ROM
+*** TODO implement sprite rendering
 * Testing
 ** DONE test unary encoding
 ** DONE ROM to test hello world
