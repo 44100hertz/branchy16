@@ -56,19 +56,29 @@ void cpu_init() {
     };
 }
 
+typedef struct {
+    word addr;
+    word value;
+    bool used;
+} MemWrite;
+
 bool cpu_step() {
     bool running = false;
     cpu_branch *last = &cpu_branches[CPU_NUM_BRANCHES];
-    static bool did_write[CPU_MEMSIZE];
+
+    static MemWrite memwrites[CPU_NUM_BRANCHES];
+    static int num_memwrites;
 
     for (cpu_branch *br = cpu_branches; br < last; ++br) {
         // either finish load or execute next instruction
-        if (br->load_wait && br->mem_addr < CPU_MEMSIZE &&
-            did_write[br->mem_addr])
-        {
-            branch_clear_loadwait(br, cpu_memory[br->mem_addr]);
-            // only unlock one waiting branch at a time, except for I/O
-            did_write[br->mem_addr] = false;
+        if (br->load_wait && br->mem_addr < CPU_MEMSIZE) {
+            for (int i = 0; i < num_memwrites; ++i) {
+                if (!memwrites[i].used && memwrites[i].addr == br->mem_addr) {
+                    branch_clear_loadwait(br, memwrites[i].value);
+                    memwrites[i].used = true;
+                    break;
+                }
+            }
         } else if (branch_running(br)) {
             branch_step(br);
         }
@@ -78,8 +88,7 @@ bool cpu_step() {
 
     // Run every store operation at once. Multiple parallel stores will OR each
     // other. Other than side effects, branch execution order doesn't matter.
-    memset(did_write, 0, sizeof(did_write));
-
+    num_memwrites = 0;
     for (cpu_branch *br = cpu_branches; br < last; ++br) {
         if (br->store_enable) {
             word addr = br->mem_addr;
@@ -87,15 +96,29 @@ bool cpu_step() {
                 // pokes are executed sequentially in any order
                 poke(addr, br->mem_val);
             } else {
-                // first write clears memory addr
-                if (!did_write[addr]) cpu_memory[addr] = 0;
-                did_write[addr] = true;
-                cpu_memory[addr] |= br->mem_val;
+                // OR pre-existing memory write
+                for (int i = 0; i < num_memwrites; ++i) {
+                    if (memwrites[i].addr == addr) {
+                        memwrites[i].value |= br->mem_val;
+                        goto write_existed;
+                    }
+                }
+                // otherwise add one to list
+                memwrites[num_memwrites++] = (MemWrite){
+                    .addr = addr,
+                    .value = br->mem_val,
+                    .used = false,
+                };
+            write_existed:
             }
         }
         br->store_enable = false;
     }
 
+    // Finalize writes
+    for (int i = 0; i < num_memwrites; ++i) {
+        cpu_memory[memwrites[i].addr] = memwrites[i].value;
+    }
     return running;
 }
 
