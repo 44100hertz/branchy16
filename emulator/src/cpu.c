@@ -91,33 +91,27 @@ bool cpu_step() {
     num_memwrites = 0;
     for (cpu_branch *br = cpu_branches; br < last; ++br) {
         if (br->store_enable) {
-            word addr = br->mem_addr;
-            if (addr >= CPU_MEMSIZE) {
-                // pokes are executed sequentially in any order
-                poke(addr, br->mem_val);
-            } else {
-                // OR pre-existing memory write
-                for (int i = 0; i < num_memwrites; ++i) {
-                    if (memwrites[i].addr == addr) {
-                        memwrites[i].value |= br->mem_val;
-                        goto write_existed;
-                    }
+            // OR pre-existing memory write
+            for (int i = 0; i < num_memwrites; ++i) {
+                if (memwrites[i].addr == br->mem_addr) {
+                    memwrites[i].value |= br->mem_val;
+                    goto write_existed;
                 }
-                // otherwise add one to list
-                memwrites[num_memwrites++] = (MemWrite){
-                    .addr = addr,
-                    .value = br->mem_val,
-                    .used = false,
-                };
-            write_existed:
             }
+            // otherwise add one to list
+            memwrites[num_memwrites++] = (MemWrite){
+                .addr = br->mem_addr,
+                .value = br->mem_val,
+                .used = false,
+            };
+        write_existed:
         }
         br->store_enable = false;
     }
 
     // Finalize writes
     for (int i = 0; i < num_memwrites; ++i) {
-        cpu_memory[memwrites[i].addr] = memwrites[i].value;
+        cpu_store(memwrites[i].addr, memwrites[i].value);
     }
     return running;
 }

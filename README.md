@@ -52,7 +52,7 @@ The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF
 
 Loads from I/O addresses must be load-waited in order to return a value other than 0. When an I/O device stores to that address, it will unlock every load-waited branch for that address on the same cycle. However, load-waiting a non-readable I/O address will lock that branch forever.
 
-Storing to an I/O address will send that value to the device and may trigger side-effects.
+Storing to an I/O address will send that value to the device and may trigger side-effects. Be aware of the fact that stores are OR'd together and occur between cycles.
 
 ### Console
 
