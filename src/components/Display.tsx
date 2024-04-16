@@ -2,23 +2,34 @@ import { createSignal } from "solid-js";
 import type { Cpu } from "branchy-cpu";
 
 const FPS = 60;
+const MAX_FRAMESKIP = 10;
 
 export default function Display(props: { cpu: Cpu }) {
   const [frameCount, setFrameCount] = createSignal(0);
   const [stopped, setStopped] = createSignal(true);
 
   // Call runDisplayFrame at 60fps
-  const frameLength = 1000 / 60;
+  const frameLength = 1000 / FPS;
   let nextFrame: number;
 
   function animationFrame() {
     let running = true;
-    if (!nextFrame) nextFrame = Date.now();
-    while (Date.now() > nextFrame) {
+
+    let frames_ran = 0;
+    let start_time = Date.now();
+
+    while (start_time > nextFrame) {
       nextFrame += frameLength;
-      running = runDisplayFrame(props.cpu);
-      setFrameCount(frameCount() + 1);
+      if (frames_ran < MAX_FRAMESKIP) {
+        running = runDisplayFrame(props.cpu);
+        ++frames_ran;
+      } else {
+        nextFrame = Date.now();
+        break;
+      }
     }
+    setFrameCount(frameCount() + frames_ran);
+
     if (running && !stopped()) {
       requestAnimationFrame(animationFrame);
     } else {
@@ -31,6 +42,7 @@ export default function Display(props: { cpu: Cpu }) {
     props.cpu._cpu_init();
     props.cpu._write_display_busyloop();
     setStopped(true); // stop previous loop
+    setFrameCount(0);
     requestAnimationFrame(() => {
       setStopped(false);
       animationFrame();
