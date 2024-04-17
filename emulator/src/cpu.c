@@ -18,21 +18,21 @@ typedef struct {
     bool load_wait;     // wait for another branch to store
 
     bool running;
-} cpu_branch;
+} CpuBranch;
 
 static word cpu_memory[CPU_MEMSIZE];
-static cpu_branch cpu_branches[CPU_NUM_BRANCHES];
+static CpuBranch cpu_branches[CPU_NUM_BRANCHES];
 
-static inline bool branch_running(cpu_branch *br) {
+static inline bool branch_running(CpuBranch *br) {
     return br->running && !br->load_wait;
 }
-static word branch_fetch(cpu_branch *br);
-static void branch_step(cpu_branch *br);
-static void branch_step_special(cpu_branch *br, word);
-static void branch_step_binary(cpu_branch *br, word);
-static void branch_step_unary(cpu_branch *br, word);
-static void branch_start(cpu_branch *source, word pc, word bp);
-static void branch_clear_loadwait(cpu_branch *br, word value);
+static word branch_fetch(CpuBranch *br);
+static void branch_step(CpuBranch *br);
+static void branch_step_special(CpuBranch *br, word);
+static void branch_step_binary(CpuBranch *br, word);
+static void branch_step_unary(CpuBranch *br, word);
+static void branch_start(CpuBranch *source, word pc, word bp);
+static void branch_clear_loadwait(CpuBranch *br, word value);
 
 static void print_cb(word addr, word value) { putchar(value); }
 
@@ -51,7 +51,7 @@ void cpu_init() {
     memset(cpu_memory, 0, sizeof(cpu_memory));
     memset(cpu_branches, 0, sizeof(cpu_branches));
     // Run branch 0
-    cpu_branches[0] = (cpu_branch){
+    cpu_branches[0] = (CpuBranch){
         .running = true,
     };
 }
@@ -64,12 +64,12 @@ typedef struct {
 
 bool cpu_step() {
     bool running = false;
-    cpu_branch *last = &cpu_branches[CPU_NUM_BRANCHES];
+    CpuBranch *last = &cpu_branches[CPU_NUM_BRANCHES];
 
     static MemWrite memwrites[CPU_NUM_BRANCHES];
     static int num_memwrites;
 
-    for (cpu_branch *br = cpu_branches; br < last; ++br) {
+    for (CpuBranch *br = cpu_branches; br < last; ++br) {
         // either finish load or execute next instruction
         if (br->load_wait && br->mem_addr < CPU_MEMSIZE) {
             for (int i = 0; i < num_memwrites; ++i) {
@@ -89,7 +89,7 @@ bool cpu_step() {
     // Run every store operation at once. Multiple parallel stores will OR each
     // other. Other than side effects, branch execution order doesn't matter.
     num_memwrites = 0;
-    for (cpu_branch *br = cpu_branches; br < last; ++br) {
+    for (CpuBranch *br = cpu_branches; br < last; ++br) {
         if (br->store_enable) {
             // OR pre-existing memory write
             for (int i = 0; i < num_memwrites; ++i) {
@@ -138,7 +138,7 @@ bool cpu_step_multiple(int steps) {
                                     : -1;
 
 // Step a single CPU branch
-void branch_step(cpu_branch *br) {
+void branch_step(CpuBranch *br) {
     word instr = branch_fetch(br);
     if ((instr & CPU_UNARY_MASK) == CPU_UNARY_MASK) {
         branch_step_unary(br, instr);
@@ -149,7 +149,7 @@ void branch_step(cpu_branch *br) {
     }
 }
 
-void branch_step_special(cpu_branch *br, word instr) {
+void branch_step_special(CpuBranch *br, word instr) {
     switch (instr >> CPU_ITAG_OFFSET) {
     case ITAG_LOAD: {
         // Load = xxxxx wo- dDDD TTTT
@@ -220,7 +220,7 @@ void branch_step_special(cpu_branch *br, word instr) {
     }
 }
 
-void branch_step_binary(cpu_branch *br, word instr) {
+void branch_step_binary(CpuBranch *br, word instr) {
     // Binary = 1xxxx OOO AAAA BBBB
     word out;
     word a = ARG_NIBBLE(4);
@@ -231,7 +231,7 @@ void branch_step_binary(cpu_branch *br, word instr) {
     br->reg[instr >> 8 & 0x7] = out;
 }
 
-void branch_step_unary(cpu_branch *br, word instr) {
+void branch_step_unary(CpuBranch *br, word instr) {
     // Unary = 1111x OOO AAAA xxxx
     word out;
     word a = ARG_NIBBLE(4);
@@ -242,14 +242,14 @@ void branch_step_unary(cpu_branch *br, word instr) {
     br->reg[instr >> 8 & 0x7] = out;
 }
 
-word branch_fetch(cpu_branch *br) {
+word branch_fetch(CpuBranch *br) {
     word out = cpu_memory[br->pc];
     br->pc = (br->pc + 1) % CPU_MEMSIZE;
     return out;
 }
 
 // Create a branch from a running branch
-void branch_start(cpu_branch *source, word pc, word bp) {
+void branch_start(CpuBranch *source, word pc, word bp) {
     // Find a branch that isn't running.
     uintptr_t new_index = 0;
     for (uintptr_t index = 0; index < CPU_NUM_BRANCHES; ++index) {
@@ -271,7 +271,7 @@ void branch_start(cpu_branch *source, word pc, word bp) {
     cpu_branches[new_index].bp = bp;
 }
 
-void branch_clear_loadwait(cpu_branch *br, word value) {
+void branch_clear_loadwait(CpuBranch *br, word value) {
     if (br->mem_val < 8) {
         br->reg[br->mem_val] = value;
     }
@@ -297,8 +297,8 @@ word cpu_load(word addr) {
 void io_store(word addr, word value) {
     addr = addr | 0xf000;
 
-    cpu_branch *last = &cpu_branches[CPU_NUM_BRANCHES];
-    for (cpu_branch *br = cpu_branches; br < last; ++br) {
+    CpuBranch *last = &cpu_branches[CPU_NUM_BRANCHES];
+    for (CpuBranch *br = cpu_branches; br < last; ++br) {
         if (br->load_wait && br->mem_addr == addr) {
             branch_clear_loadwait(br, value);
         }
