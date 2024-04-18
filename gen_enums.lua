@@ -163,4 +163,4 @@ function write_ts_consts(file)
 end
 
 write_c_consts(io.output "./emulator/src/consts.h")
-write_ts_consts(io.output "./types/consts.ts")
+write_ts_consts(io.output "./src/assembler/cpuConsts.ts")

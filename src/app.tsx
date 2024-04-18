@@ -4,9 +4,13 @@ import cpu_mod from "branchy-cpu";
 import Terminal from "./components/Terminal";
 import Display from "./components/Display";
 
+import { assemble } from "./assembler/assembler";
+import hello_world_branching from "./assembler/programs/hello_world_branching";
+
 const cpu = await cpu_mod();
 
 export default function App() {
+  assemble(hello_world_branching);
   const [consoleText, setConsoleText] = createSignal('');
 
   let test = () => { };
