@@ -207,8 +207,8 @@ void branch_step_special(CpuBranch *br, word instr) {
         break;
     }
     case ITAG_COMPARE: {
-        // Compare = xxxxx --- -AAA BBBB
-        word a = br->reg[instr >> 4 & 0x7];
+        // Compare = xxxxx --- AAAA BBBB
+        word a = ARG_NIBBLE(4);
         word b = ARG_NIBBLE(0);
 
         br->compare_flags = (a == b ? COND_FLAG_EQ : 0) |
