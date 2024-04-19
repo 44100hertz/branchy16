@@ -2,6 +2,8 @@ import { Op } from "~/assembler/cpuConsts";
 import type { Asm, Line, Arg, Reg, Num, Instruction, Ident } from "~/assembler/definitions";
 import { ArgNibble } from "./cpuConsts";
 
+// TODO: create source maps
+
 export function assemble(program: Asm) {
   console.log(`Compiling program...`);
 
@@ -59,6 +61,9 @@ function resolveConstantsPass(program: Asm, sym: SymbolTable): string[] {
     }
   }
 
+  // TODO: create source maps
+  // TODO: catch binary overwriting self earlier
+
   for (let i in program) {
     try {
       const line = program[i];
@@ -82,7 +87,9 @@ function resolveConstantsPass(program: Asm, sym: SymbolTable): string[] {
               const argDef = (instr as any)[name];
               const arg = sym.lookupArg(argDef);
               if (arg === undefined) {
-                // undefined offsets are always immediates
+                // TODO: Handle failure case where undefined offset endsup
+                // up being turned into constant nibble and actually has
+                // a width of 0.
                 unresolved.push(argDef.value);
                 incOffset(1);
               } else {
