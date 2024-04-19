@@ -6,6 +6,7 @@ import Display from "./components/Display";
 
 import { assemble } from "./assembler/assembler";
 import hello_world_branching from "./assembler/programs/hello_world_branching";
+import stress_test from "./assembler/programs/stress_test";
 
 await cpu.wasmInit();
 
@@ -17,6 +18,22 @@ export default function App() {
 
   function appendChar(_addr: number, value: number) {
     setConsoleText(consoleText() + String.fromCharCode(value));
+  }
+
+  function runBenchmark() {
+    const cycles = 1_000_000;
+    const desired_clock_speed = 96_000;
+
+    cpu.loadBinary(assemble(stress_test));
+    const start = Date.now();
+    cpu.step(cycles);
+    const run_time = Date.now() - start;
+    const clock_speed = cycles / (run_time / 1000);
+
+    console.log('runtime: ', run_time);
+    console.log('desired clock speed: ', desired_clock_speed);
+    console.log('stress test clock speed: ', clock_speed);
+    console.log('speed: ', clock_speed / desired_clock_speed * 100, '%');
   }
 
   cpu.setPokeHandler(0, appendChar);
@@ -38,6 +55,7 @@ export default function App() {
       <Terminal consoleText={consoleText} />
       <Display />
       <button class="increment" onClick={() => test()}>Emulate "hello world"</button>
+      <button onClick={runBenchmark}>Run Benchmark</button>
     </main>
   );
 }
