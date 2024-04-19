@@ -66,13 +66,6 @@ program.push(instruction({
 }));
 
 program.push(instruction({
-  op: BinOp.Add,
-  dest: reg(0),
-  arg0: reg(0),
-  arg1: immed(1),
-}));
-
-program.push(instruction({
   op: Op.Jump,
   arg0: ident('send_char'),
   compare: Cond.Always,
