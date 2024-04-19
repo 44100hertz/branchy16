@@ -48,7 +48,6 @@ void cpu_write_binary(int len, word binary[len]) {
 typedef struct {
     word addr;
     word value;
-    bool used;
 } MemWrite;
 
 bool cpu_step() {
@@ -66,10 +65,10 @@ bool cpu_step() {
         case LS_LOADWAIT:
             if (br->mem_addr < CPU_MEMSIZE) {
                 for (int i = 0; i < num_memwrites; ++i) {
-                    if (!memwrites[i].used && memwrites[i].addr == br->mem_addr)
-                    {
+                    if (memwrites[i].addr == br->mem_addr) {
                         branch_clear_loadwait(br, memwrites[i].value);
-                        memwrites[i].used = true;
+                        // swap-remove
+                        memwrites[i] = memwrites[--num_memwrites];
                         break;
                     }
                 }
@@ -101,7 +100,6 @@ bool cpu_step() {
             memwrites[num_memwrites++] = (MemWrite){
                 .addr = br->mem_addr,
                 .value = br->mem_val,
-                .used = false,
             };
         write_existed:
             br->ls_state = LS_NONE;
