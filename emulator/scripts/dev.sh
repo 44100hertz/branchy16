@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export CFLAGS="-g -Og"
+export CFLAGS="-g -O2"
 export WASM_CMD="emmake make wasm"
 $WASM_CMD
 if [[ -v WASM_WATCH ]]; then

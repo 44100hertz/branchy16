@@ -9,7 +9,7 @@ typedef word (*peek_cb)(word addr);
 enum {
     CPU_MEMSIZE = 0xf000,
     IO_SIZE = 0x1000,
-    CPU_NUM_BRANCHES = 0x100,
+    CPU_NUM_BRANCHES = 128,
     CPU_ITAG_OFFSET = 11,
     CPU_UNARY_MASK = 0b11110 << CPU_ITAG_OFFSET,
 };
@@ -28,18 +28,24 @@ enum {
     COND_FLAG_GT = 4,
 };
 
+typedef enum {
+    LS_NONE = 0,
+    LS_LOAD,
+    LS_LOADWAIT,
+    LS_STORE,
+} LoadStoreState;
+
 typedef struct {
     word reg[8];
     word bp;
     word pc;
-    byte compare_flags;
 
     // special state for memory operations
-    word mem_addr;      // target addr for memory operations
-    word mem_val;       // register or value for memory operations
-    bool store_enable;  // do a store operation
-    bool load_wait;     // wait for another branch to store
+    word mem_addr;  // target addr for memory operations
+    word mem_val;   // register or value for memory operations
+    LoadStoreState ls_state;
 
+    byte compare_flags;
     bool running;
 } CpuBranch;
 
@@ -49,7 +55,6 @@ bool cpu_step();  // Returns true if CPU is still running
 bool cpu_step_multiple(int steps);
 void cpu_store(word addr, word value);
 word cpu_load(word addr);
-bool *cpu_dump_branchstates();
 
 void set_poke_callback(int device, poke_cb);
 void io_store(word addr, word value);

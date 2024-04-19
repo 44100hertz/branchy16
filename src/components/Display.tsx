@@ -66,8 +66,8 @@ export default function Display(_props: {}) {
 const CYCLES_PER_HDRAW = 6;
 const CYCLES_PER_HBLANK = 2;
 const CYCLES_PER_HLINE = CYCLES_PER_HBLANK + CYCLES_PER_HDRAW;
-const VDRAW_LINES = 240;
-const VBLANK_LINES = 80;
+const VDRAW_LINES = 160;
+const VBLANK_LINES = 40;
 const ADDR_VBLANK_LOCK = 0xf100;
 const ADDR_SCANLINE_COUNT = 0xf101;
 const ADDR_BG_COLOR = 0xf10f;

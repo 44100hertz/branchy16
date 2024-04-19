@@ -5,26 +5,11 @@
 
 #include "consts.h"
 
-typedef struct {
-    word reg[8];
-    word bp;
-    word pc;
-    byte compare_flags;
-
-    // special state for memory operations
-    word mem_addr;      // target addr for memory operations
-    word mem_val;       // register or value for memory operations
-    bool store_enable;  // do a store operation
-    bool load_wait;     // wait for another branch to store
-
-    bool running;
-} CpuBranch;
-
 static word cpu_memory[CPU_MEMSIZE];
 static CpuBranch cpu_branches[CPU_NUM_BRANCHES];
 
 static inline bool branch_running(CpuBranch *br) {
-    return br->running && !br->load_wait;
+    return br->running && br->ls_state != LS_LOADWAIT;
 }
 static word branch_fetch(CpuBranch *br);
 static void branch_step(CpuBranch *br);
@@ -75,26 +60,36 @@ bool cpu_step() {
 
     for (CpuBranch *br = cpu_branches; br < last; ++br) {
         // either finish load or execute next instruction
-        if (br->load_wait && br->mem_addr < CPU_MEMSIZE) {
-            for (int i = 0; i < num_memwrites; ++i) {
-                if (!memwrites[i].used && memwrites[i].addr == br->mem_addr) {
-                    branch_clear_loadwait(br, memwrites[i].value);
-                    memwrites[i].used = true;
-                    break;
+        if (!br->running) continue;
+        switch (br->ls_state) {
+        case LS_NONE: branch_step(br); break;
+        case LS_LOADWAIT:
+            if (br->mem_addr < CPU_MEMSIZE) {
+                for (int i = 0; i < num_memwrites; ++i) {
+                    if (!memwrites[i].used && memwrites[i].addr == br->mem_addr)
+                    {
+                        branch_clear_loadwait(br, memwrites[i].value);
+                        memwrites[i].used = true;
+                        break;
+                    }
                 }
             }
-        } else if (branch_running(br)) {
-            branch_step(br);
+            break;
+        case LS_LOAD:
+            if (br->mem_val < 8) br->reg[br->mem_val] = cpu_load(br->mem_addr);
+            br->ls_state = LS_NONE;
+            break;
+        case LS_STORE: break;
         }
-        // branch step can affect running, do not put this in the 'if'
         running = running || branch_running(br);
     }
 
-    // Run every store operation at once. Multiple parallel stores will OR each
-    // other. Other than side effects, branch execution order doesn't matter.
+    // Run every store operation at once. Multiple parallel stores will OR
+    // each other. Other than side effects, branch execution order doesn't
+    // matter.
     num_memwrites = 0;
     for (CpuBranch *br = cpu_branches; br < last; ++br) {
-        if (br->store_enable) {
+        if (br->ls_state == LS_STORE) {
             // OR pre-existing memory write
             for (int i = 0; i < num_memwrites; ++i) {
                 if (memwrites[i].addr == br->mem_addr) {
@@ -109,8 +104,8 @@ bool cpu_step() {
                 .used = false,
             };
         write_existed:
+            br->ls_state = LS_NONE;
         }
-        br->store_enable = false;
     }
 
     // Finalize writes
@@ -164,16 +159,9 @@ void branch_step_special(CpuBranch *br, word instr) {
         // D = destination. If d is set, do no load.
         uintptr_t dest = instr >> 4 & 0xf;
         // w = wait for another branch to write, then load
-        if (instr & (1 << 10)) {
-            br->mem_addr = target;
-            br->load_wait = true;
-            br->store_enable = false;
-            br->mem_val = dest;
-        } else {
-            if (dest < 8) {
-                br->reg[dest] = cpu_load(target);
-            }
-        }
+        br->ls_state = (instr >> 10 & 0x1) == 1 ? LS_LOADWAIT : LS_LOAD;
+        br->mem_addr = target;
+        br->mem_val = dest;
         break;
     }
     case ITAG_STORE: {
@@ -181,10 +169,10 @@ void branch_step_special(CpuBranch *br, word instr) {
         // Store does not immediately store the value, but instead sets up a
         // store. This allows writes to happen after all loads have
         // finished.
-        br->store_enable = true;
+        br->ls_state = LS_STORE;
         // D = destination
         word target = ARG_NIBBLE(4);
-        // S = source register
+        // S = source
         br->mem_val = ARG_NIBBLE(0);
         // o = use relative address
         if (instr & (1 << 9)) target += br->bp;
@@ -255,7 +243,7 @@ word branch_fetch(CpuBranch *br) {
 // Create a branch from a running branch
 void branch_start(CpuBranch *source, word pc, word bp) {
     // Find a branch that isn't running.
-    uintptr_t new_index = 0;
+    uintptr_t new_index = -1;
     for (uintptr_t index = 0; index < CPU_NUM_BRANCHES; ++index) {
         if (!cpu_branches[index].running) {
             new_index = index;
@@ -264,7 +252,7 @@ void branch_start(CpuBranch *source, word pc, word bp) {
     }
 
     // If we allocated every branch, forget it.
-    if (!new_index) {
+    if (new_index == -1) {
         return;
     }
 
@@ -279,7 +267,7 @@ void branch_clear_loadwait(CpuBranch *br, word value) {
     if (br->mem_val < 8) {
         br->reg[br->mem_val] = value;
     }
-    br->load_wait = false;
+    br->ls_state = LS_NONE;
 }
 
 void cpu_store(word addr, word value) {
@@ -303,7 +291,7 @@ void io_store(word addr, word value) {
 
     CpuBranch *last = &cpu_branches[CPU_NUM_BRANCHES];
     for (CpuBranch *br = cpu_branches; br < last; ++br) {
-        if (br->load_wait && br->mem_addr == addr) {
+        if (br->ls_state == LS_LOADWAIT && br->mem_addr == addr) {
             branch_clear_loadwait(br, value);
         }
     }

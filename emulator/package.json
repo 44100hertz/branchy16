@@ -2,7 +2,7 @@
   "name": "branchy-cpu",
   "type": "module",
   "scripts": {
-    "build": "CFLAGS=-O3 emmake make src/ wasm",
+    "build": "CFLAGS=-O2 emmake make src/ wasm",
     "install": "./scripts/dev.sh",
     "dev": "WASM_WATCH=1 ./scripts/dev.sh",
     "test": "CFLAGS=-g make test && ./bin/branchy"
