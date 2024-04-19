@@ -9,7 +9,12 @@
 *** DONE compile it
 *** DONE run it
 ** TODO disassembler/debugger
-*** TODO write assembly stringifiers
+*** TODO generate instruction enum reverse lookups
+*** TODO generate source maps
+*** TODO display binary next to assembly code
+*** TODO dump and parse CPU state
+*** TODO step CPU
+*** TODO set breakpoints
 ** TODO assembler structure editor web ui
 *** TODO display assembly JSON on page
 *** TODO basic edit assembly JSON
