@@ -36,10 +36,12 @@ function resolveConstants(program: Asm, symbolTable: SymbolTable) {
   let passes = 0;
   for (let num_unresolved = Infinity; num_unresolved > 0;) {
     let unresolved = resolveConstantsPass(program, symbolTable);
-    if (unresolved.length == num_unresolved) {
-      throw new Error(`Could not resolve identifiers ${unresolved}`);
+    if (unresolved.size == num_unresolved) {
+      let unres_names = '';
+      for (let id of unresolved) unres_names += ' ' + id;
+      throw new Error(`Could not resolve identifiers: ${unres_names}`);
     }
-    num_unresolved = unresolved.length;
+    num_unresolved = unresolved.size;
     ++passes;
   }
   console.log(`Resolved program in ${passes} passes.`)
@@ -47,8 +49,8 @@ function resolveConstants(program: Asm, symbolTable: SymbolTable) {
 
 /// Perform a single constant resolution pass.
 /// Returns list of unresolved constants.
-function resolveConstantsPass(program: Asm, sym: SymbolTable): string[] {
-  let unresolved: string[] = [];
+function resolveConstantsPass(program: Asm, sym: SymbolTable): Set<string> {
+  let unresolved: Set<string> = new Set();
 
   let offset: number | undefined = 0;
   // Increment the assembler program counter, which may become undefined
@@ -72,7 +74,7 @@ function resolveConstantsPass(program: Asm, sym: SymbolTable): string[] {
         case "setPc":
           const maybeOffset = sym.lookupConstant(line.value);
           if (maybeOffset === undefined) {
-            unresolved.push(line.value.value as string);
+            unresolved.add(line.value.value as string);
           }
           offset = maybeOffset;
           break;
@@ -90,7 +92,7 @@ function resolveConstantsPass(program: Asm, sym: SymbolTable): string[] {
                 // TODO: Handle failure case where undefined offset endsup
                 // up being turned into constant nibble and actually has
                 // a width of 0.
-                unresolved.push(argDef.value);
+                unresolved.add(argDef.value);
                 incOffset(1);
               } else {
                 incOffset(argWidth(arg));
@@ -304,9 +306,9 @@ class SymbolTable {
     if (arg.kind == "ident") {
       const reg = this.regAliases[arg.value];
       const num = this.constants[arg.value];
-      if (reg && num) throw `Ambiguous argument ${arg.value}`;
-      if (reg) return { kind: 'reg', value: reg };
-      if (num) return { kind: 'num', value: num };
+      if (reg !== undefined && num !== undefined) throw `Ambiguous argument ${arg.value}`;
+      if (reg !== undefined) return { kind: 'reg', value: reg };
+      if (num !== undefined) return { kind: 'num', value: num };
       return undefined;
     }
     return arg;

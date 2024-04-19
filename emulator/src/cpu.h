@@ -28,12 +28,28 @@ enum {
     COND_FLAG_GT = 4,
 };
 
+typedef struct {
+    word reg[8];
+    word bp;
+    word pc;
+    byte compare_flags;
+
+    // special state for memory operations
+    word mem_addr;      // target addr for memory operations
+    word mem_val;       // register or value for memory operations
+    bool store_enable;  // do a store operation
+    bool load_wait;     // wait for another branch to store
+
+    bool running;
+} CpuBranch;
+
 void cpu_init();
 void cpu_write_binary(int len, word binary[len]);
 bool cpu_step();  // Returns true if CPU is still running
 bool cpu_step_multiple(int steps);
 void cpu_store(word addr, word value);
 word cpu_load(word addr);
+bool *cpu_dump_branchstates();
 
 void set_poke_callback(int device, poke_cb);
 void io_store(word addr, word value);
