@@ -1,10 +1,10 @@
 import { createSignal } from "solid-js";
-import type { Cpu } from "branchy-cpu";
+import * as cpu from "branchy-cpu";
 
 const FPS = 60;
 const MAX_FRAMESKIP = 10;
 
-export default function Display(props: { cpu: Cpu }) {
+export default function Display(_props: {}) {
   const [frameCount, setFrameCount] = createSignal(0);
   const [stopped, setStopped] = createSignal(true);
 
@@ -21,7 +21,7 @@ export default function Display(props: { cpu: Cpu }) {
     while (start_time > nextFrame) {
       nextFrame += frameLength;
       if (frames_ran < MAX_FRAMESKIP) {
-        running = runDisplayFrame(props.cpu);
+        running = runDisplayFrame();
         ++frames_ran;
       } else {
         nextFrame = Date.now();
@@ -39,8 +39,7 @@ export default function Display(props: { cpu: Cpu }) {
 
   function runDisplay() {
     nextFrame = Date.now();
-    props.cpu._cpu_init();
-    props.cpu._write_display_busyloop();
+    cpu.loadDisplayBusyLoop();
     setStopped(true); // stop previous loop
     setFrameCount(0);
     requestAnimationFrame(() => {
@@ -73,8 +72,8 @@ const ADDR_VBLANK_LOCK = 0xf100;
 const ADDR_SCANLINE_COUNT = 0xf101;
 const ADDR_BG_COLOR = 0xf10f;
 
-function runDisplayFrame(cpu: Cpu): boolean {
-  cpu._io_store(ADDR_VBLANK_LOCK, 0);
+function runDisplayFrame(): boolean {
+  cpu.ioStore(ADDR_VBLANK_LOCK, 0);
 
   function handlePoke(addr: number, value: number) {
     // TODO: Handle I/O poke
@@ -82,14 +81,12 @@ function runDisplayFrame(cpu: Cpu): boolean {
   }
 
   function ignorePoke(_addr: number, _value: number) { }
-  const handlePokePtr = cpu.addFunction(handlePoke, "vii");
-  const ignorePokePtr = cpu.addFunction(ignorePoke, "vii");
 
   for (let i = 0; i < VDRAW_LINES; ++i) {
-    cpu._io_store(ADDR_SCANLINE_COUNT, i);
+    cpu.ioStore(ADDR_SCANLINE_COUNT, i);
     // ignore pokes during scanline draw
-    cpu._set_poke_callback(1, ignorePokePtr);
-    cpu._cpu_step_multiple(CYCLES_PER_HDRAW);
+    cpu.setPokeHandler(1, ignorePoke);
+    cpu.step(CYCLES_PER_HDRAW);
 
 
     // TODO: draw display line (in hardware this is would be parallel with the above cycles)
@@ -97,12 +94,12 @@ function runDisplayFrame(cpu: Cpu): boolean {
 
     // HBLANK
     // allow pokes during HBLANK
-    cpu._set_poke_callback(1, handlePokePtr);
-    cpu._cpu_step_multiple(CYCLES_PER_HBLANK);
+    cpu.setPokeHandler(1, handlePoke);
+    cpu.step(CYCLES_PER_HBLANK);
   }
   // VBLANK
-  cpu._set_poke_callback(1, handlePokePtr);
-  let running = cpu._cpu_step_multiple(VBLANK_LINES * CYCLES_PER_HLINE);
+  cpu.setPokeHandler(1, handlePoke);
+  let running = cpu.step(VBLANK_LINES * CYCLES_PER_HLINE);
   return running;
 }
 

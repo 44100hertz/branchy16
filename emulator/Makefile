@@ -11,7 +11,7 @@ EINCLUDES=-sEXPORTED_FUNCTIONS="\
 					_set_poke_callback,\
 					_write_branching_hello,\
 					_write_display_busyloop"\
-					-sEXPORTED_RUNTIME_METHODS="ccall,addFunction"\
+					-sEXPORTED_RUNTIME_METHODS="cwrap,addFunction"\
 					-sALLOW_TABLE_GROWTH
 
 outdir:

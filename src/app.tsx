@@ -1,13 +1,13 @@
 import { createSignal } from "solid-js";
 import "./app.css";
-import cpu_mod from "branchy-cpu";
+import * as cpu from "branchy-cpu";
 import Terminal from "./components/Terminal";
 import Display from "./components/Display";
 
-import { assemble, binaryAsLittleEndian } from "./assembler/assembler";
+import { assemble } from "./assembler/assembler";
 import hello_world_branching from "./assembler/programs/hello_world_branching";
 
-const cpu = await cpu_mod();
+await cpu.wasmInit();
 
 export default function App() {
 
@@ -19,19 +19,16 @@ export default function App() {
     setConsoleText(consoleText() + String.fromCharCode(value));
   }
 
-  const pokePtr = cpu.addFunction(appendChar, 'vii');
-  cpu._set_poke_callback(0, pokePtr);
+  cpu.setPokeHandler(0, appendChar);
 
   let interval: any;
   test = () => {
     if (interval) clearInterval(interval);
-    cpu._cpu_init();
     const binary = assemble(hello_world_branching);
-    cpu.ccall('cpu_write_binary', null, ['number', 'array'],
-      [binary.length, binaryAsLittleEndian(binary)]);
+    cpu.loadBinary(binary);
 
     interval = setInterval(() => {
-      const running = cpu._cpu_step();
+      const running = cpu.step();
       if (!running) clearInterval(interval);
     }, 1);
   };
@@ -39,7 +36,7 @@ export default function App() {
   return (
     <main>
       <Terminal consoleText={consoleText} />
-      <Display cpu={cpu} />
+      <Display />
       <button class="increment" onClick={() => test()}>Emulate "hello world"</button>
     </main>
   );

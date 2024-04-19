@@ -31,15 +31,6 @@ function resolveRegisterAliases(program: Asm, symbolTable: SymbolTable) {
   }
 }
 
-export function binaryAsLittleEndian(binary: Uint16Array): Uint8Array {
-  const out: number[] = [];
-  for (let word of binary) {
-    out.push(word & 0xff);
-    out.push(word >> 8);
-  }
-  return new Uint8Array(out);
-}
-
 /// Multi-pass resolve all program constants and labels repeatedly, else throw.
 function resolveConstants(program: Asm, symbolTable: SymbolTable) {
   let passes = 0;

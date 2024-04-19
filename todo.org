@@ -3,11 +3,13 @@
 ** DONE branch wait for load
 ** DONE create web app
 ** TODO emulate pipeline waits for load and store
+
 ** TODO basic assembler for assembly JSON
 *** DONE design basic assembly JSON format
 *** DONE write hello_world_branching in TS
 *** DONE compile it
 *** DONE run it
+*** TODO get rid of ugly binarygen.c once and for all
 ** TODO disassembler/debugger
 *** TODO generate instruction enum reverse lookups
 *** TODO generate source maps

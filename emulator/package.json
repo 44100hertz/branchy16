@@ -7,7 +7,7 @@
     "dev": "WASM_WATCH=1 ./scripts/dev.sh",
     "test": "CFLAGS=-g make test && ./bin/branchy"
   },
-  "main": "./bin/",
+  "main": ".",
   "devDependencies": {
     "simple-file-watch": "^3.0.0"
   },
