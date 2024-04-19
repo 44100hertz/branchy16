@@ -56,6 +56,10 @@ void cpu_init() {
     };
 }
 
+void cpu_write_binary(int len, word binary[len]) {
+    memcpy(cpu_memory, binary, len * sizeof(word));
+}
+
 typedef struct {
     word addr;
     word value;

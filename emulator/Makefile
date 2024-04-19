@@ -5,12 +5,13 @@ CFLAGS:=$(CFLAGS) -std=c2x
 SOURCES=src/*.c
 
 EINCLUDES=-sEXPORTED_FUNCTIONS="\
-					_cpu_init,_cpu_step,_cpu_step_multiple,\
+					_cpu_init,_cpu_write_binary,\
+					_cpu_step,_cpu_step_multiple,\
 					_io_load,_io_store,\
 					_set_poke_callback,\
 					_write_branching_hello,\
 					_write_display_busyloop"\
-					-sEXPORTED_RUNTIME_METHODS="addFunction"\
+					-sEXPORTED_RUNTIME_METHODS="ccall,addFunction"\
 					-sALLOW_TABLE_GROWTH
 
 outdir:

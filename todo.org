@@ -5,8 +5,9 @@
 ** TODO emulate pipeline waits for load and store
 ** TODO basic assembler for assembly JSON
 *** DONE design basic assembly JSON format
-*** TODO write hello_world_branching in TS
-*** TODO compile and run it
+*** DONE write hello_world_branching in TS
+*** DONE compile it
+*** DONE run it
 ** TODO disassembler/debugger
 *** TODO write assembly stringifiers
 ** TODO assembler structure editor web ui

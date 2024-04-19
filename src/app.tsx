@@ -4,13 +4,13 @@ import cpu_mod from "branchy-cpu";
 import Terminal from "./components/Terminal";
 import Display from "./components/Display";
 
-import { assemble } from "./assembler/assembler";
+import { assemble, binaryAsLittleEndian } from "./assembler/assembler";
 import hello_world_branching from "./assembler/programs/hello_world_branching";
 
 const cpu = await cpu_mod();
 
 export default function App() {
-  assemble(hello_world_branching);
+
   const [consoleText, setConsoleText] = createSignal('');
 
   let test = () => { };
@@ -26,7 +26,10 @@ export default function App() {
   test = () => {
     if (interval) clearInterval(interval);
     cpu._cpu_init();
-    cpu._write_branching_hello();
+    const binary = assemble(hello_world_branching);
+    cpu.ccall('cpu_write_binary', null, ['number', 'array'],
+      [binary.length, binaryAsLittleEndian(binary)]);
+
     interval = setInterval(() => {
       const running = cpu._cpu_step();
       if (!running) clearInterval(interval);

@@ -14,6 +14,7 @@ export interface Cpu extends EmscriptenModule {
   _write_display_busyloop(): () => void,
 
   addFunction: typeof addFunction,
+  ccall: typeof ccall,
 }
 
 export default function em_main(): Promise<Cpu>;

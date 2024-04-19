@@ -29,6 +29,7 @@ enum {
 };
 
 void cpu_init();
+void cpu_write_binary(int len, word binary[len]);
 bool cpu_step();  // Returns true if CPU is still running
 bool cpu_step_multiple(int steps);
 void cpu_store(word addr, word value);
