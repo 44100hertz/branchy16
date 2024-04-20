@@ -1,6 +1,10 @@
 # What is Branchy16?
 
+Work in progress!!
+
 Branchy16 is a fantasy console with an emulated 16-bit CPU that may run many threads at a time. It is both a fun programming challenge and a legitimate ISA that could be put on hardware.
+
+It is a web application running an IDE assembler and emulator for creating and running branchy16 roms.
 
 # How do I work this?
 
