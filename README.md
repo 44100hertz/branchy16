@@ -46,17 +46,17 @@ Each branch in Branchy16 has 8 general-purpose registers, a program counter, and
 
 To start a branch, use the "branch" instruction with a target and a base pointer. To stop it, use "halt".
 
-Branches store memory between cycles, meaning that every store will not affect loads until the next cycle. Multiple writes to the same memory location in one cycle OR each other.
+Branches store memory between cycles, meaning that every store will not affect loads until the next cycle. Multiple writes to the same memory location in one cycle bitwise OR each other.
 
-Branches may share data more predictably using a load-wait instruction. The waiting branch will execute a load only after another branch stores to the target cell, on the next cycle as the store. In the case of multiple load-waits on the same cell, each store to a target cell will only unlock a single branch, allowing for easy creation of mutexes.
+Branches may share data predictably using a load-wait instruction. Load-wait waits for another branch to store to a memory cell, loads the value from that write on the next cycle, and resumes on the cycle after that. In the case of multiple load-waits on the same cell, each store to a target cell will only unlock a single branch, allowing for easy creation of mutexes.
 
 ## I/O and Devices
 
 The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF000-0xFFFF are I/O addresses.
 
-Loads from I/O addresses must be load-waited in order to return a value other than 0. When an I/O device stores to that address, it will unlock every load-waited branch for that address on the same cycle. However, load-waiting a non-readable I/O address will lock that branch forever.
+Loads from I/O addresses must be load-waited in order to return a value other than 0. When an I/O device stores to that address, it will unlock every load-waited branch for that address on the next cycle. However, load-waiting a non-readable I/O address will lock that branch forever.
 
-Storing to an I/O address will send that value to the device and may trigger side-effects. Be aware of the fact that stores are OR'd together and occur between cycles.
+Storing to an I/O address will send that value to the device and may trigger side-effects. Be aware of the fact that multiple stores are OR'd together.
 
 ### Console
 
