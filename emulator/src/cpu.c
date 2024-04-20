@@ -9,7 +9,7 @@ static word cpu_memory[CPU_MEMSIZE];
 static CpuBranch cpu_branches[CPU_NUM_BRANCHES];
 
 static inline bool branch_running(CpuBranch *br) {
-    return br->running && br->ls_state != LS_LOADWAIT;
+    return br->running && (br->ls_state != LS_LOADWAIT || br->mem_addr >= 0xf000);
 }
 static word branch_fetch(CpuBranch *br);
 static void branch_step(CpuBranch *br);

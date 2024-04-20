@@ -6,10 +6,6 @@ const MAX_FRAMESKIP = 10;
 
 const SCREEN_WIDTH = 240;
 const SCREEN_HEIGHT = 160;
-const CYCLES_PER_HDRAW = 6;
-const CYCLES_PER_HBLANK = 2;
-const CYCLES_PER_HLINE = CYCLES_PER_HBLANK + CYCLES_PER_HDRAW;
-const VBLANK_LINES = 40;
 
 export default function Display(_props: {}) {
   const [frameCount, setFrameCount] = createSignal(0);
@@ -67,17 +63,24 @@ export default function Display(_props: {}) {
 
   return (
     <>
+      <canvas ref={canvas} width={SCREEN_WIDTH} height={SCREEN_HEIGHT} />
       <button onClick={runDisplay}>Run Display</button>
       <button onClick={stopDisplay}>Stop Display</button>
-      <canvas ref={canvas} width={SCREEN_WIDTH} height={SCREEN_HEIGHT} />
       <div>Frame Count: {frameCount()}</div>
       <div>Stopped: {stopped() ? 'yes' : 'no'}</div>
     </>
   )
 }
 
+const CYCLES_PER_HDRAW = 6;
+const CYCLES_PER_HBLANK = 2;
+const CYCLES_PER_HLINE = CYCLES_PER_HBLANK + CYCLES_PER_HDRAW;
+const VBLANK_LINES = 40;
+
 const ADDR_VBLANK_LOCK = 0xf100;
-const ADDR_SCANLINE_COUNT = 0xf101;
+const ADDR_HBLANK_LOCK = 0xf102;
+const ADDR_SCANLINE_COUNT = 0xf103;
+
 const ADDR_BG_COLOR = 0x0f;
 
 type Color = [number, number, number];
@@ -85,63 +88,68 @@ type Color = [number, number, number];
 class Screen {
   ctx: CanvasRenderingContext2D;
   bgColor: Color;
-  scanline: Uint8ClampedArray;
+  screenBuf: ImageData;
 
   constructor(canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext("2d")!;
     this.bgColor = [0, 0, 0];
-    this.scanline = new Uint8ClampedArray(SCREEN_WIDTH * 4);
+    this.screenBuf = new ImageData(
+      new Uint8ClampedArray(SCREEN_HEIGHT * SCREEN_WIDTH * 4),
+      SCREEN_WIDTH);
+
+    // Set all alpha to 255
+    for (let i = 0; i < this.screenBuf.data.length / 4; ++i) {
+      this.screenBuf.data[i * 4 + 3] = 255;
+    }
   }
 
-  writePixel(x: number, color: [number, number, number]) {
-    const red_index = x * 4;
-    this.scanline[red_index] = color[0];
-    this.scanline[red_index + 1] = color[1];
-    this.scanline[red_index + 2] = color[2];
-    this.scanline[red_index + 3] = 255;
+  writePixel(x: number, y: number, color: [number, number, number]) {
+    const red_index = (y * SCREEN_WIDTH + x) * 4;
+    for (let i = 0; i < 3; ++i) {
+      this.screenBuf.data[red_index + i] = color[i];
+    }
   }
 
   runDisplayFrame(): boolean {
-    cpu.ioStore(ADDR_VBLANK_LOCK, 0);
-
+    let ignore_poke = true;
     const handlePoke = (addr: number, value: number) => {
+      if (ignore_poke) return;
       if (addr === ADDR_BG_COLOR) {
         this.bgColor = Screen.wordToColor(value);
       }
     }
-
-    const ignorePoke = (_addr: number, _value: number) => { }
+    cpu.setPokeHandler(1, handlePoke);
 
     for (let y = 0; y < SCREEN_HEIGHT; ++y) {
       cpu.ioStore(ADDR_SCANLINE_COUNT, y);
       // ignore pokes during scanline draw
-      cpu.setPokeHandler(1, ignorePoke);
+      ignore_poke = true;
       cpu.step(CYCLES_PER_HDRAW);
 
       for (let x = 0; x < SCREEN_WIDTH; ++x) {
-        this.writePixel(x, this.bgColor);
+        this.writePixel(x, y, this.bgColor);
       }
 
-      const imgData = new ImageData(this.scanline, SCREEN_WIDTH);
-      this.ctx.putImageData(imgData, 0, y);
-
-      // HBLANK
       // allow pokes during HBLANK
-      cpu.setPokeHandler(1, handlePoke);
+      ignore_poke = false;
+      cpu.ioStore(ADDR_HBLANK_LOCK, 0);
       cpu.step(CYCLES_PER_HBLANK);
     }
 
+    this.ctx.putImageData(this.screenBuf, 0, 0);
+
     // VBLANK
-    cpu.setPokeHandler(1, handlePoke);
+    ignore_poke = false;
+    cpu.ioStore(ADDR_VBLANK_LOCK, 0);
     let running = cpu.step(VBLANK_LINES * CYCLES_PER_HLINE);
     return running;
   }
 
   static wordToColor(word: number): Color {
     return [
-      (word >> 8 & 0xf) << 4,
-      (word >> 4 & 0xf) << 4,
-      (word >> 0 & 0xf) << 4,
+      (word >> 8 & 0xf) * 0x11,
+      (word >> 4 & 0xf) * 0x11,
+      (word >> 0 & 0xf) * 0x11,
     ];
   }
 }
