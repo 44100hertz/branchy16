@@ -1,6 +1,5 @@
 #include "cpu.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include "consts.h"
@@ -8,9 +7,23 @@
 static word cpu_memory[CPU_MEMSIZE];
 static CpuBranch cpu_branches[CPU_NUM_BRANCHES];
 
+#define MAX_CPU_MEMWRITES 4
+#define MAX_STORES 6
+#define MAX_LOADS 4
+
+typedef struct {
+    word addr;
+    word value;
+    bool io;
+} MemWrite;
+static MemWrite memwrites[MAX_STORES];
+static int num_memwrites;
+
 static inline bool branch_running(CpuBranch *br) {
-    return br->running && (br->ls_state != LS_LOADWAIT || br->mem_addr >= 0xf000);
+    return br->running &&
+           (br->ls_state != LS_LOADWAIT || br->mem_addr >= 0xf000);
 }
+static bool try_queue_store(word addr, word value, bool io);
 static word branch_fetch(CpuBranch *br);
 static void branch_step(CpuBranch *br);
 static void branch_step_special(CpuBranch *br, word);
@@ -19,12 +32,13 @@ static void branch_step_unary(CpuBranch *br, word);
 static void branch_start(CpuBranch *source, word pc, word bp);
 static void branch_clear_loadwait(CpuBranch *br, word value);
 
-static void print_cb(word addr, word value) { putchar(value); }
-
-static poke_cb device_poke_cbs[0x10] = {[0 ... 15] = print_cb};
+static poke_cb device_poke_cbs[0x10] = {0};
 
 static void poke(word addr, word value) {
-    device_poke_cbs[addr >> 8 & 0xf](addr & 0xff, value);
+    poke_cb cb = device_poke_cbs[addr >> 8 & 0xf];
+    if (cb) {
+        cb(addr & 0xff, value);
+    }
 }
 
 void set_poke_callback(int index, poke_cb fn) {
@@ -45,38 +59,36 @@ void cpu_write_binary(int len, word binary[len]) {
     memcpy(cpu_memory, binary, len * sizeof(word));
 }
 
-typedef struct {
-    word addr;
-    word value;
-} MemWrite;
-
 bool cpu_step() {
     bool running = false;
     CpuBranch *last = &cpu_branches[CPU_NUM_BRANCHES];
 
-    static MemWrite memwrites[CPU_NUM_BRANCHES];
-    static int num_memwrites;
-
+    int load_count = 0;
     for (CpuBranch *br = cpu_branches; br < last; ++br) {
         // either finish load or execute next instruction
         if (!br->running) continue;
         switch (br->ls_state) {
         case LS_NONE: branch_step(br); break;
         case LS_LOADWAIT:
-            if (br->mem_addr < CPU_MEMSIZE) {
-                for (int i = 0; i < num_memwrites; ++i) {
-                    if (memwrites[i].addr == br->mem_addr) {
-                        branch_clear_loadwait(br, memwrites[i].value);
-                        // swap-remove
+            for (int i = 0; i < num_memwrites; ++i) {
+                if (memwrites[i].addr == br->mem_addr) {
+                    branch_clear_loadwait(br, memwrites[i].value);
+                    // swap-remove
+                    if (!memwrites[i].io) {
                         memwrites[i] = memwrites[--num_memwrites];
-                        break;
                     }
+                    break;
                 }
             }
             break;
         case LS_LOAD:
-            if (br->mem_val < 8) br->reg[br->mem_val] = cpu_load(br->mem_addr);
-            br->ls_state = LS_NONE;
+            if (load_count < MAX_LOADS) {
+                if (br->mem_val < 8) {
+                    br->reg[br->mem_val] = cpu_load(br->mem_addr);
+                }
+                br->ls_state = LS_NONE;
+                ++load_count;
+            }
             break;
         case LS_STORE: break;
         }
@@ -89,20 +101,9 @@ bool cpu_step() {
     num_memwrites = 0;
     for (CpuBranch *br = cpu_branches; br < last; ++br) {
         if (br->ls_state == LS_STORE) {
-            // OR pre-existing memory write
-            for (int i = 0; i < num_memwrites; ++i) {
-                if (memwrites[i].addr == br->mem_addr) {
-                    memwrites[i].value |= br->mem_val;
-                    goto write_existed;
-                }
+            if (try_queue_store(br->mem_addr, br->mem_val, false)) {
+                br->ls_state = LS_NONE;
             }
-            // otherwise add one to list
-            memwrites[num_memwrites++] = (MemWrite){
-                .addr = br->mem_addr,
-                .value = br->mem_val,
-            };
-        write_existed:
-            br->ls_state = LS_NONE;
         }
     }
 
@@ -111,6 +112,21 @@ bool cpu_step() {
         cpu_store(memwrites[i].addr, memwrites[i].value);
     }
     return running;
+}
+
+static bool try_queue_store(word addr, word value, bool io) {
+    uintptr_t max = io ? MAX_STORES : MAX_CPU_MEMWRITES;
+    if (num_memwrites == max) return false;
+    for (int i = 0; i < num_memwrites; ++i) {
+        // if store exists, OR it
+        if (memwrites[i].addr == addr) {
+            memwrites[i].value |= value;
+            return true;
+        }
+    }
+    // otherwise add one to list
+    memwrites[num_memwrites++] = (MemWrite){addr, value, io};
+    return true;
 }
 
 bool cpu_step_multiple(int steps) {
@@ -285,14 +301,7 @@ word cpu_load(word addr) {
 }
 
 void io_store(word addr, word value) {
-    addr = addr | 0xf000;
-
-    CpuBranch *last = &cpu_branches[CPU_NUM_BRANCHES];
-    for (CpuBranch *br = cpu_branches; br < last; ++br) {
-        if (br->ls_state == LS_LOADWAIT && br->mem_addr == addr) {
-            branch_clear_loadwait(br, value);
-        }
-    }
+    try_queue_store(addr | 0xf000, value, true);
 }
 
 word io_load(word addr) {
