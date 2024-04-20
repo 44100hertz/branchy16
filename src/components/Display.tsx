@@ -89,6 +89,7 @@ class Screen {
   ctx: CanvasRenderingContext2D;
   bgColor: Color;
   screenBuf: ImageData;
+  ignore_poke: boolean = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext("2d")!;
@@ -101,6 +102,8 @@ class Screen {
     for (let i = 0; i < this.screenBuf.data.length / 4; ++i) {
       this.screenBuf.data[i * 4 + 3] = 255;
     }
+
+    cpu.setPokeHandler(1, this.handlePoke.bind(this));
   }
 
   writePixel(x: number, y: number, color: [number, number, number]) {
@@ -110,36 +113,37 @@ class Screen {
     }
   }
 
-  runDisplayFrame(): boolean {
-    let ignore_poke = true;
-    const handlePoke = (addr: number, value: number) => {
-      if (ignore_poke) return;
-      if (addr === ADDR_BG_COLOR) {
-        this.bgColor = Screen.wordToColor(value);
-      }
+  handlePoke(addr: number, value: number) {
+    if (this.ignore_poke) return;
+    if (addr === ADDR_BG_COLOR) {
+      this.bgColor = Screen.wordToColor(value);
     }
-    cpu.setPokeHandler(1, handlePoke);
+  }
 
+  runDisplayFrame(): boolean {
     for (let y = 0; y < SCREEN_HEIGHT; ++y) {
       cpu.ioStore(ADDR_SCANLINE_COUNT, y);
       // ignore pokes during scanline draw
-      ignore_poke = true;
-      cpu.step(CYCLES_PER_HDRAW);
+      this.ignore_poke = true;
+      // write to HBLANK lock 1 cycle early
+      cpu.step(CYCLES_PER_HDRAW - 1);
 
       for (let x = 0; x < SCREEN_WIDTH; ++x) {
         this.writePixel(x, y, this.bgColor);
       }
 
-      // allow pokes during HBLANK
-      ignore_poke = false;
+      // write to HBLANK lock two cycles before
       cpu.ioStore(ADDR_HBLANK_LOCK, 0);
+      cpu.step();
+      // allow pokes during HBLANK
+      this.ignore_poke = false;
       cpu.step(CYCLES_PER_HBLANK);
     }
 
     this.ctx.putImageData(this.screenBuf, 0, 0);
 
     // VBLANK
-    ignore_poke = false;
+    this.ignore_poke = false;
     cpu.ioStore(ADDR_VBLANK_LOCK, 0);
     let running = cpu.step(VBLANK_LINES * CYCLES_PER_HLINE);
     return running;
