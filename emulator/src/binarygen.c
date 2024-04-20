@@ -93,7 +93,7 @@ void write_display_busyloop() {
     WI(STORE, 0, IMMED, R0);                 // write background color
     WW(0xf10f);                              //
     WI(ADD, R0, R0, IMMED);                  // increment background color
-    WW(0x0101);                              //
+    WW(0x0008);                              //
     WI(JUMP, 0, IMMED, COND_ALWAYS);         // loop
     WW(loop);
 }

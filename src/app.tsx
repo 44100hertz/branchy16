@@ -1,10 +1,9 @@
-import { createSignal } from "solid-js";
 import "./app.css";
 import * as cpu from "branchy-cpu";
-import Terminal from "./components/Terminal";
-import Display from "./components/Display";
+import Terminal from "~/components/Terminal";
+import Display from "~/components/Display";
 
-import stress_test from "./assembler/programs/stress_test";
+import stress_test from "~/assembler/programs/stress_test";
 import { assemble } from "~/assembler/assembler";
 
 await cpu.wasmInit();
