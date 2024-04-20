@@ -88,9 +88,12 @@ void write_hello() {
 void write_display_busyloop() {
     // spam BG color writes
     word offset = 0;
-    word loop = WI(STORE, 0, IMMED, R0);  // write background color
-    WW(0xf10f);                           //
-    WI(ADD, R0, R0, CONST_1);             // increment background color
-    WI(JUMP, 0, IMMED, COND_ALWAYS);      // loop
+    word loop = WI(LOAD, 0b100, R1, IMMED);  // loop
+    WW(0xf102);                              //
+    WI(STORE, 0, IMMED, R0);                 // write background color
+    WW(0xf10f);                              //
+    WI(ADD, R0, R0, IMMED);                  // increment background color
+    WW(0x0101);                              //
+    WI(JUMP, 0, IMMED, COND_ALWAYS);         // loop
     WW(loop);
 }
