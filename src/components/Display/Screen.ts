@@ -102,8 +102,8 @@ class ImageBuffer {
 
   writePixel(x: number, y: number, color: Color) {
     const red_index = (y * SCREEN_WIDTH + x) * 4;
-    for (let i = 0; i < 3; ++i) {
-      this.buf.data[red_index + i] = color[i];
-    }
+    this.buf.data[red_index + 0] = color[0];
+    this.buf.data[red_index + 1] = color[1];
+    this.buf.data[red_index + 2] = color[2];
   }
 }
