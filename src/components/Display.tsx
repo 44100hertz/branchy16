@@ -6,6 +6,7 @@ const MAX_FRAMESKIP = 10;
 
 export default function Display(_props: {}) {
   const [frameCount, setFrameCount] = createSignal(0);
+  const [dropCount, setDropCount] = createSignal(0);
   const [stopped, setStopped] = createSignal(true);
 
   // Call runDisplayFrame at 60fps
@@ -34,6 +35,7 @@ export default function Display(_props: {}) {
         break;
       }
     }
+    if (frames_ran > 1) setDropCount(dropCount() + frames_ran - 1);
     setFrameCount(frameCount() + frames_ran);
 
     if (running && !stopped()) {
@@ -64,6 +66,7 @@ export default function Display(_props: {}) {
       <button onClick={runDisplay}>Run Display</button>
       <button onClick={stopDisplay}>Stop Display</button>
       <div>Frame Count: {frameCount()}</div>
+      <div>Dropped: {dropCount()}</div>
       <div>Stopped: {stopped() ? 'yes' : 'no'}</div>
     </>
   )
