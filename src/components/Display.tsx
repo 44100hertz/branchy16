@@ -1,6 +1,5 @@
 import { createSignal, onMount } from "solid-js";
 import * as cpu from "branchy-cpu";
-import Screen, { SCREEN_WIDTH, SCREEN_HEIGHT } from "~/components/Display/Screen";
 
 const FPS = 60;
 const MAX_FRAMESKIP = 10;
@@ -13,13 +12,13 @@ export default function Display(_props: {}) {
   const frameLength = 1000 / FPS;
   let nextFrame: number;
   let canvas: HTMLCanvasElement | undefined = undefined;
-  let screen: Screen | undefined = undefined;
+  let screen: cpu.Screen;
 
   onMount(() => {
-    screen = new Screen(canvas!);
+    screen = new cpu.Screen(canvas!);
   })
 
-  function animationFrame(screen: Screen) {
+  function animationFrame() {
     let running = true;
 
     let frames_ran = 0;
@@ -28,7 +27,7 @@ export default function Display(_props: {}) {
     while (start_time > nextFrame) {
       nextFrame += frameLength;
       if (frames_ran < MAX_FRAMESKIP) {
-        running = screen.runDisplayFrame();
+        screen.runFrame();
         ++frames_ran;
       } else {
         nextFrame = Date.now();
@@ -38,7 +37,7 @@ export default function Display(_props: {}) {
     setFrameCount(frameCount() + frames_ran);
 
     if (running && !stopped()) {
-      requestAnimationFrame(() => animationFrame(screen));
+      requestAnimationFrame(() => animationFrame());
     } else {
       setStopped(true);
     }
@@ -51,7 +50,7 @@ export default function Display(_props: {}) {
     setFrameCount(0);
     requestAnimationFrame(() => {
       setStopped(false);
-      animationFrame(screen!);
+      animationFrame();
     });
   }
 
@@ -61,7 +60,7 @@ export default function Display(_props: {}) {
 
   return (
     <>
-      <canvas ref={canvas} width={SCREEN_WIDTH} height={SCREEN_HEIGHT} />
+      <canvas ref={canvas} width={cpu.SCREEN_WIDTH} height={cpu.SCREEN_HEIGHT} />
       <button onClick={runDisplay}>Run Display</button>
       <button onClick={stopDisplay}>Stop Display</button>
       <div>Frame Count: {frameCount()}</div>

@@ -1,6 +1,9 @@
-import cpu_mod from "./bin/index";
+import Module from "./bin/index";
 
 export const MEMSIZE = 0xf000;
+export const SCREEN_WIDTH = 240;
+export const SCREEN_HEIGHT = 160;
+const SCREEN_BUF_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT * 4;
 
 let cpu;
 let _writebinary;
@@ -14,7 +17,7 @@ function checkWasm() {
 /// Load CPU from wasm. Run this before anything else, or it will break.
 export async function wasmInit() {
   if (!cpu) {
-    cpu = await cpu_mod();
+    cpu = await Module();
     _writebinary = cpu.cwrap('cpu_write_binary', null, ['number', 'array']);
   }
 }
@@ -68,14 +71,28 @@ export function step(count) {
   }
 }
 
-/// Acting as an I/O device, load a value from CPU memory
-export function ioLoad(addr) {
-  checkWasm();
-  cpu._io_store(addr);
-}
-
 /// Acting as an I/O device, store a word into CPU memory
 export function ioStore(addr, value) {
   checkWasm();
   return cpu._io_store(addr, value);
+}
+
+export class Screen {
+  context;
+  imageData;
+
+  constructor(canvas) {
+    this.imageData = new ImageData(SCREEN_WIDTH, SCREEN_HEIGHT);
+    this.context = canvas.getContext('2d');
+  }
+
+  runFrame() {
+    const running = cpu._ppu_frame();
+    const data = cpu._ppu_screen();
+    // copy data from code to image buffer
+    this.imageData.data.set(cpu.HEAPU8.subarray(data, data + SCREEN_BUF_SIZE));
+    // draw image buffer
+    this.context.putImageData(this.imageData, 0, 0);
+    return running;
+  }
 }

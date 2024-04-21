@@ -37,7 +37,7 @@ static poke_cb device_poke_cbs[0x10] = {0};
 static void poke(word addr, word value) {
     poke_cb cb = device_poke_cbs[addr >> 8 & 0xf];
     if (cb) {
-        cb(addr & 0xff, value);
+        cb(addr, value);
     }
 }
 
@@ -286,7 +286,7 @@ void branch_clear_loadwait(CpuBranch *br, word value) {
 
 void cpu_store(word addr, word value) {
     if (addr >= CPU_MEMSIZE) {
-        poke(addr & 0xfff, value);
+        poke(addr, value);
     } else {
         cpu_memory[addr] = value;
     }
@@ -302,11 +302,4 @@ word cpu_load(word addr) {
 
 void io_store(word addr, word value) {
     try_queue_store(addr | 0xf000, value, true);
-}
-
-word io_load(word addr) {
-    if (addr >= CPU_MEMSIZE) {
-        return 0;
-    }
-    return cpu_memory[addr];
 }

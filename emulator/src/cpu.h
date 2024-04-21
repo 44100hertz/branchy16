@@ -52,12 +52,10 @@ typedef struct {
 } CpuBranch;
 
 void cpu_init();
+void set_poke_callback(int device, poke_cb);
 void cpu_write_binary(int len, word binary[len]);
 bool cpu_step();  // Returns true if CPU is still running
 bool cpu_step_multiple(int steps);
 void cpu_store(word addr, word value);
-word cpu_load(word addr);
-
-void set_poke_callback(int device, poke_cb);
 void io_store(word addr, word value);
-word io_load(word addr);
+word cpu_load(word addr);

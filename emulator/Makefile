@@ -3,11 +3,14 @@ OUT=./bin/branchy
 CC?=$(CC)
 CFLAGS:=$(CFLAGS) -std=c2x
 SOURCES=src/*.c
+TEST_SOURCES=src/cpu.c src/tests.c src/binarygen.c src/main.c
 
 EINCLUDES=-sEXPORTED_FUNCTIONS="\
+					_main,\
 					_cpu_init,_cpu_write_binary,\
 					_cpu_step,_cpu_step_multiple,\
-					_io_load,_io_store,\
+					_ppu_frame,_ppu_screen,\
+					_io_store,\
 					_set_poke_callback,\
 					_write_branching_hello,\
 					_write_display_busyloop"\
@@ -18,7 +21,7 @@ outdir:
 	mkdir -p $(OUTDIR)
 
 test: outdir
-	$(CC) $(SOURCES) $(CFLAGS) -g -Wall -DTESTING -o $(OUT)
+	$(CC) $(TEST_SOURCES) $(CFLAGS) -g -Wall -DTESTING -o $(OUT)
 	$(OUT)
 
 wasm: outdir
