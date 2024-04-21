@@ -8,12 +8,6 @@ const SCREEN_BUF_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT * 4;
 let cpu;
 let _writebinary;
 
-function checkWasm() {
-  if (cpu === undefined) {
-    throw new Error("Please run wasmInit before calling any cpu functions.");
-  }
-}
-
 /// Load CPU from wasm. Run this before anything else, or it will break.
 export async function wasmInit() {
   if (!cpu) {
@@ -25,7 +19,6 @@ export async function wasmInit() {
 /// Reset the CPU memory and execution state.
 /// Then, load a binary, which is an array of 16-bit words, into the CPU.
 export function loadBinary(binary) {
-  checkWasm();
   cpu._cpu_init();
   console.assert(binary.length < MEMSIZE);
 
@@ -42,7 +35,6 @@ export function loadBinary(binary) {
 }
 
 export function loadDisplayBusyLoop() {
-  checkWasm();
   cpu._cpu_init();
   cpu._write_display_busyloop();
 }
@@ -53,7 +45,6 @@ const pokeHandlers = {};
 /// @param index device index, which routes pokes from 0xfD00
 /// @param fn poke handler
 export function setPokeHandler(index, fn) {
-  checkWasm();
   console.assert(index < 0x10);
   if (!(fn in pokeHandlers)) {
     pokeHandlers[fn] = cpu.addFunction(fn, 'vii');
@@ -63,7 +54,6 @@ export function setPokeHandler(index, fn) {
 
 /// Step the CPU by one or more cycles
 export function step(count) {
-  checkWasm();
   if (count !== undefined) {
     return cpu._cpu_step_multiple(count);
   } else {
@@ -73,7 +63,6 @@ export function step(count) {
 
 /// Acting as an I/O device, store a word into CPU memory
 export function ioStore(addr, value) {
-  checkWasm();
   return cpu._io_store(addr, value);
 }
 
