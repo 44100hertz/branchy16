@@ -39,17 +39,28 @@ export function loadDisplayBusyLoop() {
   cpu._write_display_busyloop();
 }
 
-const pokeHandlers = {};
+const funcPointers = {};
 
 /// Set up a CPU callback for device "poke" on address 0xf000 and up.
-/// @param index device index, which routes pokes from 0xfD00
+/// @param index device index, which routes pokes from 0xf?00
 /// @param fn poke handler
 export function setPokeHandler(index, fn) {
   console.assert(index < 0x10);
-  if (!(fn in pokeHandlers)) {
-    pokeHandlers[fn] = cpu.addFunction(fn, 'vii');
+  if (!(fn in funcPointers)) {
+    funcPointers[fn] = cpu.addFunction(fn, 'vii');
   }
-  cpu._set_poke_callback(index, pokeHandlers[fn]);
+  cpu._set_poke_callback(index, funcPointers[fn]);
+}
+
+/// Set up a CPU callback for device "peek" on address 0xf000 and up.
+/// @param index device index, which routes peeks from 0xf?00
+/// @param fn peek handler
+export function setPeekHandler(index, fn) {
+  console.assert(index < 0x10);
+  if (!(fn in funcPointers)) {
+    funcPointers[fn] = cpu.addFunction(fn, 'ii');
+  }
+  cpu._set_peek_callback(index, funcPointers[fn]);
 }
 
 /// Step the CPU by one or more cycles

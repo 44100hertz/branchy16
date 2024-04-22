@@ -32,17 +32,15 @@ static void branch_step_unary(CpuBranch *br, word);
 static void branch_start(CpuBranch *source, word pc, word bp);
 static void branch_clear_loadwait(CpuBranch *br, word value);
 
-static poke_cb device_poke_cbs[0x10] = {0};
+static PokeCb device_poke_cbs[0x10] = {0};
+static PeekCb device_peek_cbs[0x10] = {0};
 
-static void poke(word addr, word value) {
-    poke_cb cb = device_poke_cbs[addr >> 8 & 0xf];
-    if (cb) {
-        cb(addr, value);
-    }
+void set_poke_callback(int index, PokeCb fn) {
+    device_poke_cbs[index & 0xf] = fn;
 }
 
-void set_poke_callback(int index, poke_cb fn) {
-    device_poke_cbs[index & 0xf] = fn;
+void set_peek_callback(int index, PeekCb fn) {
+    device_peek_cbs[index & 0xf] = fn;
 }
 
 void cpu_init() {
@@ -277,6 +275,21 @@ void branch_start(CpuBranch *source, word pc, word bp) {
     cpu_branches[new_index].bp = bp;
 }
 
+static void poke(word addr, word value) {
+    PokeCb cb = device_poke_cbs[addr >> 8 & 0xf];
+    if (cb) {
+        cb(addr, value);
+    }
+}
+
+static word peek(word addr) {
+    PeekCb cb = device_peek_cbs[addr >> 8 & 0xf];
+    if (cb) {
+        return cb(addr);
+    }
+    return 0;
+}
+
 void branch_clear_loadwait(CpuBranch *br, word value) {
     if (br->mem_val < 8) {
         br->reg[br->mem_val] = value;
@@ -294,7 +307,7 @@ void cpu_store(word addr, word value) {
 
 word cpu_load(word addr) {
     if (addr >= CPU_MEMSIZE) {
-        return 0;
+        return peek(addr);
     } else {
         return cpu_memory[addr];
     }

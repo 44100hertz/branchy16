@@ -5,8 +5,8 @@
 
 typedef uint8_t byte;
 typedef uint16_t word;
-typedef void (*poke_cb)(word addr, word value);
-typedef word (*peek_cb)(word addr);
+typedef void (*PokeCb)(word addr, word value);
+typedef word (*PeekCb)(word addr);
 
 enum {
     CPU_MEMSIZE = 0xf000,
@@ -52,7 +52,8 @@ typedef struct {
 } CpuBranch;
 
 void cpu_init();
-void set_poke_callback(int device, poke_cb);
+void set_poke_callback(int device, PokeCb);
+void set_peek_callback(int device, PeekCb);
 void cpu_write_binary(int len, word binary[len]);
 bool cpu_step();  // Returns true if CPU is still running
 bool cpu_step_multiple(int steps);

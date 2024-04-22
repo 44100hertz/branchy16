@@ -60,9 +60,9 @@ Branches may share data predictably using a load-wait instruction. Load-wait wai
 
 The first 120KiB (Address 0x0000-0xEFFF) are RAM, the last 8KiB in addresses 0xF000-0xFFFF are I/O addresses.
 
-Loads from I/O addresses must be load-waited in order to return a value other than 0. When an I/O device stores to that address, it will unlock every load-waited branch for that address on the next cycle. However, load-waiting a non-readable I/O address will lock that branch forever.
-
 Storing to an I/O address will send that value to the device and may trigger side-effects. Be aware of the fact that multiple stores are OR'd together.
+
+Loading from an I/O address will read a value from a device and may trigger side-effects. However, some devices output values at-will, for example controller inputs or the screen. When an I/O device stores to that address, it will unlock every load-waited branch for that address on the next cycle. However, load-waiting the wrong I/O address can lock a branch forever.
 
 ### Console
 

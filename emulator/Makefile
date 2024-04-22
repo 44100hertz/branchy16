@@ -11,7 +11,7 @@ EINCLUDES=-sEXPORTED_FUNCTIONS="\
 					_cpu_step,_cpu_step_multiple,\
 					_ppu_frame,_ppu_screen,\
 					_io_store,\
-					_set_poke_callback,\
+					_set_poke_callback,_set_peek_callback,\
 					_write_branching_hello,\
 					_write_display_busyloop"\
 					-sEXPORTED_RUNTIME_METHODS="cwrap,addFunction"\
