@@ -46,11 +46,38 @@ static word ppu_peek(word addr);
 static Color word_to_color(word c);
 static void set_pixel_color(byte x, Color value);
 
-static void draw_bg_scanline(BgLayer b, bool transparent);
+static void draw_bg_scanline(BgLayer b);
 static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
-                            bool swapxy, bool transparent);
+                            bool swapxy);
 
 BgLayer bg_0;
+
+bool ppu_frame() {
+    for (scanline_count = 0; scanline_count < SCREEN_HEIGHT; scanline_count++) {
+        io_store(A_SCANLINE_COUNT, scanline_count);
+        // ignore pokes during scanline draw
+        ignore_poke = true;
+        // write to HBLANK lock 1 cycle early
+        cpu_step_multiple(CYCLES_PER_HDRAW - 1);
+        io_store(A_HBLANK_LOCK, 0);
+        cpu_step();
+
+        for (uintptr_t x = 0; x < SCREEN_WIDTH; ++x) {
+            set_pixel_color(x, bg_color);
+        }
+        draw_bg_scanline(bg_0);
+
+        // allow pokes during HBLANK
+        ignore_poke = false;
+        cpu_step_multiple(CYCLES_PER_HBLANK);
+    }
+
+    // VBLANK
+    ignore_poke = false;
+    io_store(A_VBLANK_LOCK, 0);
+    bool running = cpu_step_multiple(VBLANK_LINES * CYCLES_PER_HLINE);
+    return running;
+}
 
 void ppu_init() {
     set_poke_callback(1, ppu_poke);
@@ -123,74 +150,14 @@ word ppu_peek(word addr) {
     return 0;
 }
 
-bool ppu_frame() {
-    for (scanline_count = 0; scanline_count < SCREEN_HEIGHT; scanline_count++) {
-        io_store(A_SCANLINE_COUNT, scanline_count);
-        // ignore pokes during scanline draw
-        ignore_poke = true;
-        // write to HBLANK lock 1 cycle early
-        cpu_step_multiple(CYCLES_PER_HDRAW - 1);
-
-        draw_bg_scanline(bg_0, false);
-
-        // write to HBLANK lock 1 cycle early
-        io_store(A_HBLANK_LOCK, 0);
-        cpu_step();
-        //  allow pokes during HBLANK
-        ignore_poke = false;
-        cpu_step_multiple(CYCLES_PER_HBLANK);
-    }
-
-    // VBLANK
-    ignore_poke = false;
-    io_store(A_VBLANK_LOCK, 0);
-    bool running = cpu_step_multiple(VBLANK_LINES * CYCLES_PER_HLINE);
-    return running;
-}
-
 static void set_pixel_color(byte x, Color value) {
-    if (x > SCREEN_WIDTH) return;
+    if (x >= SCREEN_WIDTH) return;
     screenbuf[scanline_count * SCREEN_WIDTH + x] = value;
 }
 
 Color *ppu_screen() { return screenbuf; }
 
-// draw an 8-pixel slice for a tile or sprite.
-// @i_pal: palette index 0-8
-// @i_pattern: tile offset of pattern (32-bit index)
-static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
-                            bool swapxy, bool transparent) {
-    // only draw if pattern is within memory bounds
-    if (i_pattern >= CPU_MEMSIZE / 2) return;
-    if (i_pattern + 1 >= CPU_MEMSIZE / 2) return;
-    if (swapxy && i_pattern + 8 >= CPU_MEMSIZE / 2) return;
-
-    for (byte i = 0; i < 8; ++i) {
-        // get pattern nibble
-        byte nib;
-        byte o = reverse ? i : 7 - i;
-        if (swapxy) {
-            byte pat_high = (i_pattern & 0xfff8) + o;
-            byte pat_low = i_pattern & 0x0003;
-            bool high_word = !(i_pattern & 0x4);
-            nib = cpu_memory[pat_high * 2 + high_word] >> (pat_low * 4);
-        } else {
-            nib = cpu_memory[i_pattern * 2 + 1 - o / 4] >> ((o % 4) * 4);
-        }
-        nib &= 0xf;
-        // don't draw transparent pixels
-        if (nib & 0x8) {
-            if (transparent) continue;
-            // ...but draw background if warranted
-            set_pixel_color(x + i, bg_color);
-        } else {
-            // draw final pixel from palette
-            set_pixel_color(x + i, palette[(8 * i_pal | nib) % PALETTE_SIZE]);
-        }
-    }
-}
-
-static void draw_bg_scanline(BgLayer bg, bool transparent) {
+static void draw_bg_scanline(BgLayer bg) {
     // calculate tile line to draw
     byte source_line = scanline_count - bg.scroll_y;  // wrapping subtraction
     byte pattern_offset_y = source_line % 8;          // index within tile
@@ -214,7 +181,36 @@ static void draw_bg_scanline(BgLayer bg, bool transparent) {
         word i_pattern = bg.o_pattern + i_tile * 8 |
                          (flipy ? 7 - pattern_offset_y : pattern_offset_y);
 
-        draw_tile_slice(x * 8 + bg.scroll_x, i_pal, i_pattern, flipx, swapxy,
-                        transparent);
+        draw_tile_slice(x * 8 + bg.scroll_x, i_pal, i_pattern, flipx, swapxy);
+    }
+}
+
+// draw an 8-pixel slice for a tile or sprite.
+// @i_pal: palette index 0-8
+// @i_pattern: tile offset of pattern (32-bit index)
+static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
+                            bool swapxy) {
+    // only draw if pattern is within memory bounds
+    if (i_pattern >= CPU_MEMSIZE / 2) return;
+    if (i_pattern + 1 >= CPU_MEMSIZE / 2) return;
+    if (swapxy && i_pattern + 8 >= CPU_MEMSIZE / 2) return;
+
+    for (byte i = 0; i < 8; ++i) {
+        // get pattern nibble
+        byte nib;
+        byte o = reverse ? i : 7 - i;
+        if (swapxy) {
+            byte pat_high = (i_pattern & 0xfff8) + o;
+            byte pat_low = i_pattern & 0x0003;
+            bool high_word = !(i_pattern & 0x4);
+            nib = cpu_memory[pat_high * 2 + high_word] >> (pat_low * 4);
+        } else {
+            nib = cpu_memory[i_pattern * 2 + 1 - o / 4] >> ((o % 4) * 4);
+        }
+        nib &= 0xf;
+        // don't draw transparent pixels
+        if (nib & 0x8) continue;
+        // draw final pixel from palette
+        set_pixel_color(x + i, palette[(8 * i_pal | nib) % PALETTE_SIZE]);
     }
 }
