@@ -88,12 +88,24 @@ void write_hello() {
 void write_display_busyloop() {
     // spam BG color writes
     word offset = 0;
+    WU(COPY, R3, CONST_0);
     word loop = WI(LOAD, 0b100, R1, IMMED);  // loop
     WW(0xf102);                              //
     WI(STORE, 0, IMMED, R0);                 // write background color
     WW(0xf10f);                              //
     WI(ADD, R0, R0, IMMED);                  // increment background color
     WW(0x0008);                              //
-    WI(JUMP, 0, IMMED, COND_ALWAYS);         // loop
+    WI(LOAD, 0, R2, IMMED);                  // load scanline counter
+    WW(0xf103);                              //
+    WI(COMPARE, 0, R2, IMMED);               // check for vblank
+    WW(160);                                 //
+    WI(JUMP, 0, IMMED, COND_LT);             // loop if not vblank
+    WW(loop);
+    WI(ADD, R3, R3, CONST_1);         // increment R3
+    WI(STORE, 0, IMMED, R3);          // write to scroll X
+    WW(0xf124);                       //
+    WI(STORE, 0, IMMED, R3);          // write to scroll y
+    WW(0xf125);                       //
+    WI(JUMP, 0, IMMED, COND_ALWAYS);  // loop
     WW(loop);
 }
