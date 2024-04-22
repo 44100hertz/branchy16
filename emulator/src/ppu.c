@@ -35,23 +35,26 @@ typedef struct {
 static Color hue_table[256];
 
 extern word cpu_memory[CPU_MEMSIZE];
-static bool ignore_poke = false;
+static bool ignore_poke;
+static byte scanline_count;
 static Color bg_color;
 static Color screenbuf[SCREEN_SIZE];
 static Color palette[PALETTE_SIZE];
 
 static void ppu_poke(word addr, word value);
+static word ppu_peek(word addr);
 static Color word_to_color(word c);
-static void set_pixel_color(byte x, byte y, Color value);
+static void set_pixel_color(byte x, Color value);
 
-static void draw_bg_scanline(BgLayer b, byte line, bool transparent);
-static void draw_tile_slice(byte x, byte y, byte i_pal, word i_pattern,
-                            bool reverse, bool transparent);
+static void draw_bg_scanline(BgLayer b, bool transparent);
+static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
+                            bool transparent);
 
 BgLayer bg_0;
 
 void ppu_init() {
     set_poke_callback(1, ppu_poke);
+    set_peek_callback(1, ppu_peek);
 
     // make screen opaque
     for (uintptr_t i = 0; i < SCREEN_SIZE; ++i) {
@@ -102,7 +105,7 @@ static void bg_poke(BgLayer *bg, word addr, word value) {
     }
 }
 
-static void ppu_poke(word addr, word value) {
+void ppu_poke(word addr, word value) {
     if (ignore_poke) return;
     if (addr == A_BG_COLOR) {
         bg_color = word_to_color(value);
@@ -113,15 +116,22 @@ static void ppu_poke(word addr, word value) {
     }
 }
 
+word ppu_peek(word addr) {
+    if (addr == A_SCANLINE_COUNT) {
+        return scanline_count;
+    }
+    return 0;
+}
+
 bool ppu_frame() {
-    for (uintptr_t screen_y = 0; screen_y < SCREEN_HEIGHT; ++screen_y) {
-        io_store(A_SCANLINE_COUNT, screen_y);
+    for (scanline_count = 0; scanline_count < SCREEN_HEIGHT; scanline_count++) {
+        io_store(A_SCANLINE_COUNT, scanline_count);
         // ignore pokes during scanline draw
         ignore_poke = true;
         // write to HBLANK lock 1 cycle early
         cpu_step_multiple(CYCLES_PER_HDRAW - 1);
 
-        draw_bg_scanline(bg_0, screen_y, false);
+        draw_bg_scanline(bg_0, false);
 
         // write to HBLANK lock 1 cycle early
         io_store(A_HBLANK_LOCK, 0);
@@ -138,10 +148,9 @@ bool ppu_frame() {
     return running;
 }
 
-static void set_pixel_color(byte x, byte y, Color value) {
+static void set_pixel_color(byte x, Color value) {
     if (x > SCREEN_WIDTH) return;
-    if (y > SCREEN_HEIGHT) return;
-    screenbuf[y * SCREEN_WIDTH + x] = value;
+    screenbuf[scanline_count * SCREEN_WIDTH + x] = value;
 }
 
 Color *ppu_screen() { return screenbuf; }
@@ -149,10 +158,8 @@ Color *ppu_screen() { return screenbuf; }
 // draw an 8-pixel slice for a tile or sprite.
 // @i_pal: source offset for palette, multiple of 8
 // @i_pattern: source offset of pattern, multiple of 2
-static void draw_tile_slice(byte x, byte y, byte i_pal, word i_pattern,
-                            bool reverse, bool transparent) {
-    // only draw on visible scanline
-    if (y >= SCREEN_HEIGHT) return;
+static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
+                            bool transparent) {
     // only draw if pattern is within memory bounds
     if (i_pattern >= CPU_MEMSIZE) return;
     if (i_pattern + 1 >= CPU_MEMSIZE) return;
@@ -168,18 +175,18 @@ static void draw_tile_slice(byte x, byte y, byte i_pal, word i_pattern,
         if (nib & 0x8) {
             if (transparent) continue;
             // ...but draw background if warranted
-            set_pixel_color(x + i, y, bg_color);
+            set_pixel_color(x + i, bg_color);
             continue;
         }
         // draw final pixel from palette
-        set_pixel_color(x + i, y, palette[i_pal | nib]);
+        set_pixel_color(x + i, palette[i_pal | nib]);
     }
 }
 
-static void draw_bg_scanline(BgLayer bg, byte line, bool transparent) {
+static void draw_bg_scanline(BgLayer bg, bool transparent) {
     // calculate tile line to draw
-    byte source_line = line - bg.scroll_y;    // wrapping subtraction
-    byte pattern_offset_y = source_line % 8;  // index within tile
+    byte source_line = scanline_count - bg.scroll_y;  // wrapping subtraction
+    byte pattern_offset_y = source_line % 8;          // index within tile
     // base offset of desired attribute
     word i_attrib = bg.o_attribute + (source_line / 8) * 32;
 
@@ -199,7 +206,7 @@ static void draw_bg_scanline(BgLayer bg, byte line, bool transparent) {
         word i_pattern =
             i_tile * 8 | (flipy ? 8 - pattern_offset_y : pattern_offset_y);
 
-        draw_tile_slice(x * 8 + bg.scroll_x, line, i_pal, i_pattern, flipx,
+        draw_tile_slice(x * 8 + bg.scroll_x, i_pal, i_pattern, flipx,
                         transparent);
     }
 }
