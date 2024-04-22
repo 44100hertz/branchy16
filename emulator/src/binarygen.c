@@ -86,9 +86,19 @@ void write_hello() {
 }
 
 void write_display_busyloop() {
-    // spam BG color writes
+    // set up tile pointers
     word offset = 0;
-    WU(COPY, R3, CONST_0);
+    WU(COPY, R3, CONST_0);           // scroll offset var
+    WI(LOAD, 0b100, IMMED, IMMED);   // wait for vblank
+    WW(0xf100);                      //
+    WI(STORE, 0, IMMED, IMMED);      // store pattern offset
+    WW(0xf120);                      //
+    word pattern_offset = offset++;  //
+    WI(STORE, 0, IMMED, IMMED);      // store attribute offset
+    WW(0xf121);                      //
+    word attrib_offset = offset++;
+
+    // spam BG color writes
     word loop = WI(LOAD, 0b100, R1, IMMED);  // loop
     WW(0xf102);                              //
     WI(STORE, 0, IMMED, R0);                 // write background color
@@ -101,6 +111,8 @@ void write_display_busyloop() {
     WW(160);                                 //
     WI(JUMP, 0, IMMED, COND_LT);             // loop if not vblank
     WW(loop);
+
+    // scroll diagonially
     WI(ADD, R3, R3, CONST_1);         // increment R3
     WI(STORE, 0, IMMED, R3);          // write to scroll X
     WW(0xf124);                       //
@@ -108,4 +120,40 @@ void write_display_busyloop() {
     WW(0xf125);                       //
     WI(JUMP, 0, IMMED, COND_ALWAYS);  // loop
     WW(loop);
+
+    offset = 0x100;
+    cpu_store(pattern_offset, offset);
+    uint32_t pattern[16] = {
+        // the letter B
+        0x88888888,  //
+        0x80188888,  //
+        0x81288888,  //
+        0x82345688,  //
+        0x83488768,  //
+        0x84588658,  //
+        0x85676588,  //
+        0x88888888,  //
+        // smiley face
+        0x88888888,  //
+        0x88088088,  //
+        0x88088088,  //
+        0x88088088,  //
+        0x88888888,  //
+        0x80888808,  //
+        0x88000088,  //
+        0x88888888,  //
+    };
+    for (int i = 0; i < 32; ++i) {
+        WW(pattern[i] >> 16);
+        WW(pattern[i]);
+    }
+
+    cpu_store(attrib_offset, offset);
+    for (int i = 0; i < 1024; ++i) {
+        bool flipx = i % 2 == 0;
+        bool flipy = (i / 2) % 2 == 0;
+        byte pal = (i / 4) % 8;
+        byte pat = (i / 32) % 2;
+        WW(pat << 8 | pal << 4 | flipx << 3 | flipy << 2);
+    }
 }

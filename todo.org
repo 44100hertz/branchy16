@@ -45,9 +45,9 @@ Experiment if that doesn't work.
 *** DONE design screen spec
 *** DONE create bg_color poke test ROM
 *** DONE create structure for screen component
-*** TODO implement bg_color display
-*** TODO create tilemap test ROM
-*** TODO implement tilemap rendering
+*** DONE implement bg_color display
+*** DONE create tilemap test ROM
+*** DONE implement tilemap rendering
 *** TODO create sprite test ROM
 *** TODO implement sprite rendering
 * Testing

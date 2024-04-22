@@ -76,7 +76,7 @@ void ppu_init() {
     }
 
     for (uintptr_t i = 0; i < PALETTE_SIZE; ++i) {
-        palette[i] = word_to_color(i * 64);
+        palette[i] = word_to_color(i * 1028);
     }
 
     bg_0 = (BgLayer){0};
@@ -98,7 +98,7 @@ static Color word_to_color(word c) {
 
 static void bg_poke(BgLayer *bg, word addr, word value) {
     switch (addr & 0xf) {
-    case 0: bg->o_pattern = value; break;
+    case 0: bg->o_pattern = value / 2; break;  // treat as 32-bit offset
     case 1: bg->o_attribute = value; break;
     case 4: bg->scroll_x = value; break;
     case 5: bg->scroll_y = value; break;
@@ -111,7 +111,7 @@ void ppu_poke(word addr, word value) {
         bg_color = word_to_color(value);
     } else if (addr >= A_PALETTE_START && addr <= A_PALETTE_END) {
         palette[addr - A_PALETTE_START] = word_to_color(value);
-    } else if (addr > A_BG_0 && addr < A_BG_0 + 0x10) {
+    } else if (addr >= A_BG_0 && addr < A_BG_0 + 0x10) {
         bg_poke(&bg_0, addr, value);
     }
 }
@@ -156,30 +156,31 @@ static void set_pixel_color(byte x, Color value) {
 Color *ppu_screen() { return screenbuf; }
 
 // draw an 8-pixel slice for a tile or sprite.
-// @i_pal: source offset for palette, multiple of 8
-// @i_pattern: source offset of pattern, multiple of 2
+// @i_pal: palette index 0-8
+// @i_pattern: 32-bit offset of pattern
 static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
                             bool transparent) {
     // only draw if pattern is within memory bounds
-    if (i_pattern >= CPU_MEMSIZE) return;
-    if (i_pattern + 1 >= CPU_MEMSIZE) return;
+    if (i_pattern >= CPU_MEMSIZE / 2) return;
+    if (i_pattern + 1 >= CPU_MEMSIZE / 2) return;
 
     // read pattern line as 8 x 4bpp pixels (32-bit word)
-    uint32_t row = *(uint32_t *)&cpu_memory[i_pattern];
+    uint32_t row =
+        cpu_memory[i_pattern * 2] << 16 | cpu_memory[i_pattern * 2 + 1];
 
     for (byte i = 0; i < 8; ++i) {
         // get pattern nibble
-        uintptr_t offset = reverse ? (8 - i) : i;
+        uintptr_t offset = (reverse ? i : (7 - i)) * 4;
         byte nib = (row >> offset) & 0xf;
         // don't draw transparent pixels
         if (nib & 0x8) {
             if (transparent) continue;
             // ...but draw background if warranted
             set_pixel_color(x + i, bg_color);
-            continue;
+        } else {
+            // draw final pixel from palette
+            set_pixel_color(x + i, palette[(8 * i_pal | nib) % PALETTE_SIZE]);
         }
-        // draw final pixel from palette
-        set_pixel_color(x + i, palette[i_pal | nib]);
     }
 }
 
@@ -203,8 +204,8 @@ static void draw_bg_scanline(BgLayer bg, bool transparent) {
         bool flipy = attrib >> 2 & 0x1;
 
         // get pattern line from specified tile
-        word i_pattern =
-            i_tile * 8 | (flipy ? 8 - pattern_offset_y : pattern_offset_y);
+        word i_pattern = bg.o_pattern + i_tile * 8 |
+                         (flipy ? 7 - pattern_offset_y : pattern_offset_y);
 
         draw_tile_slice(x * 8 + bg.scroll_x, i_pal, i_pattern, flipx,
                         transparent);
