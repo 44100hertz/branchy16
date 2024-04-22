@@ -152,8 +152,9 @@ void write_display_busyloop() {
     for (int i = 0; i < 1024; ++i) {
         bool flipx = i % 2 == 0;
         bool flipy = (i / 2) % 2 == 0;
+        bool swapxy = (i / 64) % 2;
         byte pal = (i / 4) % 8;
         byte pat = (i / 32) % 2;
-        WW(pat << 8 | pal << 4 | flipx << 3 | flipy << 2);
+        WW(pat << 8 | pal << 4 | flipx << 3 | flipy << 2 | swapxy << 1);
     }
 }

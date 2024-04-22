@@ -48,7 +48,7 @@ static void set_pixel_color(byte x, Color value);
 
 static void draw_bg_scanline(BgLayer b, bool transparent);
 static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
-                            bool transparent);
+                            bool swapxy, bool transparent);
 
 BgLayer bg_0;
 
@@ -157,21 +157,27 @@ Color *ppu_screen() { return screenbuf; }
 
 // draw an 8-pixel slice for a tile or sprite.
 // @i_pal: palette index 0-8
-// @i_pattern: 32-bit offset of pattern
+// @i_pattern: tile offset of pattern (32-bit index)
 static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
-                            bool transparent) {
+                            bool swapxy, bool transparent) {
     // only draw if pattern is within memory bounds
     if (i_pattern >= CPU_MEMSIZE / 2) return;
     if (i_pattern + 1 >= CPU_MEMSIZE / 2) return;
-
-    // read pattern line as 8 x 4bpp pixels (32-bit word)
-    uint32_t row =
-        cpu_memory[i_pattern * 2] << 16 | cpu_memory[i_pattern * 2 + 1];
+    if (swapxy && i_pattern + 8 >= CPU_MEMSIZE / 2) return;
 
     for (byte i = 0; i < 8; ++i) {
         // get pattern nibble
-        uintptr_t offset = (reverse ? i : (7 - i)) * 4;
-        byte nib = (row >> offset) & 0xf;
+        byte nib;
+        byte o = reverse ? i : 7 - i;
+        if (swapxy) {
+            byte pat_high = (i_pattern & 0xfff8) + o;
+            byte pat_low = i_pattern & 0x0003;
+            bool high_word = !(i_pattern & 0x4);
+            nib = cpu_memory[pat_high * 2 + high_word] >> (pat_low * 4);
+        } else {
+            nib = cpu_memory[i_pattern * 2 + 1 - o / 4] >> ((o % 4) * 4);
+        }
+        nib &= 0xf;
         // don't draw transparent pixels
         if (nib & 0x8) {
             if (transparent) continue;
@@ -202,12 +208,13 @@ static void draw_bg_scanline(BgLayer bg, bool transparent) {
         byte i_pal = attrib >> 4 & 0x7;
         bool flipx = attrib >> 3 & 0x1;
         bool flipy = attrib >> 2 & 0x1;
+        bool swapxy = attrib >> 1 & 0x1;
 
         // get pattern line from specified tile
         word i_pattern = bg.o_pattern + i_tile * 8 |
                          (flipy ? 7 - pattern_offset_y : pattern_offset_y);
 
-        draw_tile_slice(x * 8 + bg.scroll_x, i_pal, i_pattern, flipx,
+        draw_tile_slice(x * 8 + bg.scroll_x, i_pal, i_pattern, flipx, swapxy,
                         transparent);
     }
 }
