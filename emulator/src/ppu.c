@@ -83,7 +83,7 @@ void ppu_init() {
     set_poke_callback(1, ppu_poke);
     set_peek_callback(1, ppu_peek);
 
-    // make screen opaque
+    // make screen opaque and red
     for (uintptr_t i = 0; i < SCREEN_SIZE; ++i) {
         screenbuf[i].r = 255;
         screenbuf[i].a = 255;
@@ -136,7 +136,7 @@ void ppu_poke(word addr, word value) {
     if (ignore_poke) return;
     if (addr == A_BG_COLOR) {
         bg_color = word_to_color(value);
-    } else if (addr >= A_PALETTE_START && addr <= A_PALETTE_END) {
+    } else if (addr >= A_PALETTE_START && addr < A_PALETTE_END) {
         palette[addr - A_PALETTE_START] = word_to_color(value);
     } else if (addr >= A_BG_0 && addr < A_BG_0 + 0x10) {
         bg_poke(&bg_0, addr, value);
