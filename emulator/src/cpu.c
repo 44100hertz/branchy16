@@ -4,7 +4,7 @@
 
 #include "consts.h"
 
-static word cpu_memory[CPU_MEMSIZE];
+word cpu_memory[CPU_MEMSIZE];
 static CpuBranch cpu_branches[CPU_NUM_BRANCHES];
 
 #define MAX_CPU_MEMWRITES 4

@@ -62,7 +62,12 @@ export default function Display(_props: {}) {
 
   return (
     <>
-      <canvas ref={canvas} width={cpu.SCREEN_WIDTH} height={cpu.SCREEN_HEIGHT} />
+      <canvas ref={canvas} width={cpu.SCREEN_WIDTH} height={cpu.SCREEN_HEIGHT}
+        style={{
+          width: cpu.SCREEN_WIDTH * 3 + 'px',
+          height: cpu.SCREEN_HEIGHT * 3 + 'px',
+          ['image-rendering']: 'pixelated'
+        }} />
       <button onClick={runDisplay}>Run Display</button>
       <button onClick={stopDisplay}>Stop Display</button>
       <div>Frame Count: {frameCount()}</div>
