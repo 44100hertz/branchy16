@@ -1,9 +1,15 @@
 * General
-** DONE basic arithmetic
-** DONE branch wait for load
-** DONE create web app
-** TODO emulate pipeline waits for load and store
-
+** TODO expand backing RAM to 128KiB
+Many loads and stores in I/O devices check if the CPU RAM is below 0xf000 (RAM size). This should be removed.
+I/O devices should use pointers into CPU RAM internally for certain values, instead of storing them themselves.
+Loads, stores, and even jumps into I/O RAM should simply deal with backing memory and glitch out.
+*** TODO document this in README
+** TODO mutex load
+Add a bitflag to the load instruction to indicate that it's a mutex load.
+If the value loaded is 0, then continue execution.
+If the value loaded is nonzero, then switch to a load-wait on that value.
+Only mutex loads should singly unlock branches.
+*** TODO document this in README
 ** TODO basic assembler for assembly JSON
 *** DONE design basic assembly JSON format
 *** DONE write hello_world_branching in TS
@@ -41,6 +47,10 @@ Experiment if that doesn't work.
 ** TODO CPU viewer web ui
 *** TODO global branch grid
 *** TODO branch register and flag status
+** DONE basic arithmetic
+** DONE branch wait for load
+** DONE create web app
+** DONE emulate pipeline waits for load and store
 ** TODO screen
 *** DONE design screen spec
 *** DONE create bg_color poke test ROM
