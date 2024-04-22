@@ -4,10 +4,11 @@ import * as cpu from "branchy-cpu";
 const FPS = 60;
 const MAX_FRAMESKIP = 10;
 
-export default function Display(_props: {}) {
+export default function Display(props: { scale: number }) {
   const [frameCount, setFrameCount] = createSignal(0);
   const [dropCount, setDropCount] = createSignal(0);
   const [stopped, setStopped] = createSignal(true);
+  const [canvasScale, setCanvasScale] = createSignal([240 * props.scale, 160 * props.scale]);
 
   // Call runDisplayFrame at 60fps
   const frameLength = 1000 / FPS;
@@ -16,7 +17,15 @@ export default function Display(_props: {}) {
   let screen: cpu.Screen;
 
   onMount(() => {
-    screen = new cpu.Screen(canvas!);
+    if (canvas === undefined) throw "No canvas!!";
+    screen = new cpu.Screen(canvas);
+    // integer scaling
+    const goal_scale = Math.floor(props.scale * window.devicePixelRatio);
+    const actual_scale = goal_scale / window.devicePixelRatio;
+    setCanvasScale([
+      cpu.SCREEN_WIDTH * actual_scale,
+      cpu.SCREEN_HEIGHT * actual_scale,
+    ])
   })
 
   function animationFrame() {
@@ -64,8 +73,8 @@ export default function Display(_props: {}) {
     <>
       <canvas ref={canvas} width={cpu.SCREEN_WIDTH} height={cpu.SCREEN_HEIGHT}
         style={{
-          width: cpu.SCREEN_WIDTH * 3 + 'px',
-          height: cpu.SCREEN_HEIGHT * 3 + 'px',
+          width: canvasScale()[0] + 'px',
+          height: canvasScale()[1] + 'px',
           ['image-rendering']: 'pixelated'
         }} />
       <button onClick={runDisplay}>Run Display</button>

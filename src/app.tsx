@@ -28,7 +28,7 @@ export default function App() {
   return (
     <main>
       <Terminal />
-      <Display />
+      <Display scale={4} />
       <button onClick={runBenchmark}>Run Benchmark</button>
     </main>
   );
