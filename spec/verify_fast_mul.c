@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void run_test();
+static void run_test(void);
 
 bool verbose = false;
 
@@ -39,9 +39,9 @@ int main() {
   // for (int i = -32; i < 31; ++i) {
   //   simulate_signed_add(i, false, 6);
   // }
-  run_test();
-  verbose = true;
-  run_test();
+  for (int i = 0; i < 50; ++i) {
+    run_test();
+  }
   // run_test();
   // run_test();
   return 0;
@@ -52,7 +52,7 @@ void run_test() {
   const uint16_t bitmask = rand();
   const int bit_count = 7;
   int8_t *const factors = malloc(factor_count);
-  int16_t *const factors_rot = malloc(bit_count * sizeof(*factors_rot));
+  int16_t *const factors_rot = calloc(bit_count, sizeof(*factors_rot));
 
   rand();
   for (int x = 0; x < factor_count; ++x) {
@@ -62,6 +62,9 @@ void run_test() {
       // converts twos complement into sign-mag representation
       slice ^= (1 << (bit_count - 1)) - 1;
       ++slice;
+      // if (verbose) {
+      //   printf("%d converted to %d\n", factors[x], slice & 0x3f);
+      // }
     }
     for (int b = 0; b < bit_count; ++b) {
       if (slice & (1 << b)) {
@@ -76,8 +79,6 @@ void run_test() {
     for (int i = 0; i < factor_count; ++i) {
       int sign = bitmask & (1 << i) ? 1 : -1;
       sum += factors[i] * sign;
-      if (verbose)
-        printf("added %d*%d got %d\n", factors[i], sign, sum);
     }
     printf("result: %d\n", sum);
   }
@@ -85,19 +86,13 @@ void run_test() {
   {
     puts("sideways sum.");
     int sum = 0;
+    // invert input based on sign of slice table
     uint16_t bitmask_xor = bitmask ^ factors_rot[bit_count - 1];
-    if (verbose)
-      printf("mask %016b\nsign %016b\nmasx %016b\n\n", bitmask,
-             0xffff & factors_rot[bit_count - 1], bitmask_xor);
+    // sum each bit in parallel
     for (int i = 0; i < bit_count - 1; ++i) {
       int step = __builtin_popcount(factors_rot[i] & bitmask_xor & 0xffff) -
                  __builtin_popcount(factors_rot[i] & (~bitmask_xor) & 0xffff);
       sum += step << i;
-      if (verbose)
-        printf("mask %016b\nrow  %016b\n", bitmask_xor,
-               factors_rot[i] & 0xffff);
-      if (verbose)
-        printf("added %d, got %d\n", step << i, sum);
     }
     printf("result: %d\n", sum);
   }
