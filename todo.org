@@ -1,15 +1,4 @@
 * General
-** TODO expand backing RAM to 128KiB
-Many loads and stores in I/O devices check if the CPU RAM is below 0xf000 (RAM size). This should be removed.
-I/O devices should use pointers into CPU RAM internally for certain values, instead of storing them themselves.
-Loads, stores, and even jumps into I/O RAM should simply deal with backing memory and glitch out.
-*** TODO document this in README
-** TODO mutex load
-Add a bitflag to the load instruction to indicate that it's a mutex load.
-If the value loaded is 0, then continue execution.
-If the value loaded is nonzero, then switch to a load-wait on that value.
-Only mutex loads should singly unlock branches.
-*** TODO document this in README
 ** TODO basic assembler for assembly JSON
 *** DONE design basic assembly JSON format
 *** DONE write hello_world_branching in TS
@@ -27,6 +16,24 @@ Only mutex loads should singly unlock branches.
 *** TODO basic edit assembly JSON
 *** TODO load and save assembly JSON, plus localstorage
 *** TODO pixel editor
+** DONE create web app
+* CPU
+** TODO expand backing RAM to 128KiB
+Many loads and stores in I/O devices check if the CPU RAM is below 0xf000 (RAM size). This should be removed.
+I/O devices should use pointers into CPU RAM internally for certain values, instead of storing them themselves.
+Loads, stores, and even jumps into I/O RAM should simply deal with backing memory and glitch out.
+*** TODO document this in README
+** TODO mutex load
+Add a bitflag to the load instruction to indicate that it's a mutex load.
+If the value loaded is 0, then continue execution.
+If the value loaded is nonzero, then switch to a load-wait on that value.
+Only mutex loads should singly unlock branches.
+*** TODO document this in README
+** TODO ROM to test arithmetic (multiply ROM)
+** TODO more arithmetic
+** TODO carry
+** TODO signed ops
+** TODO signed compare
 ** TODO Canvas-text overlay component
 Use canvas-text overlays to create fast and readable colored UIs. Basically, a nearest-scaled canvas which is the behind some monospaced text where each memory word is one pixel.
 ** TODO memory viewer web ui
@@ -47,27 +54,23 @@ Experiment if that doesn't work.
 ** TODO CPU viewer web ui
 *** TODO global branch grid
 *** TODO branch register and flag status
+** DONE emulate pipeline waits for load and store
 ** DONE basic arithmetic
 ** DONE branch wait for load
-** DONE create web app
-** DONE emulate pipeline waits for load and store
-** TODO screen
-*** DONE design screen spec
-*** DONE create bg_color poke test ROM
-*** DONE create structure for screen component
-*** DONE implement bg_color display
-*** DONE create tilemap test ROM
-*** DONE implement tilemap rendering
-*** TODO create sprite test ROM
-*** TODO implement sprite rendering
-* Testing
-** DONE test unary encoding
-** DONE ROM to test hello world
-** DONE ROM to test branching
-** TODO ROM to test arithmetic (multiply ROM)
-* Arithmetic
 ** DONE add more defaults to nibble arguments
-** TODO more arithmetic
-** TODO carry
-** TODO signed ops
-** TODO signed compare
+* Video
+** TODO investigate use of multithreaded video during HDRAW
+** TODO create sprite test ROM
+** TODO implement sprite rendering
+** DONE design screen spec
+** DONE create bg_color poke test ROM
+** DONE create structure for screen component
+** DONE implement bg_color display
+** DONE create tilemap test ROM
+** DONE implement tilemap rendering
+* Audio
+** DONE describe audio spec
+** DONE create PDM encoder/decoder
+** TODO create audio worklet with shared memory
+** TODO create PDM wavetable player
+** TODO create PDM wavetable utility
