@@ -15,7 +15,6 @@
 *** TODO display assembly JSON on page
 *** TODO basic edit assembly JSON
 *** TODO load and save assembly JSON, plus localstorage
-*** TODO pixel editor
 ** DONE create web app
 * CPU
 ** TODO expand backing RAM to 128KiB
@@ -62,6 +61,8 @@ Experiment if that doesn't work.
 ** TODO investigate use of multithreaded video during HDRAW
 ** TODO create sprite test ROM
 ** TODO implement sprite rendering
+** TODO implement inline pixel editor
+** TODO add image import to pixel editor
 ** DONE design screen spec
 ** DONE create bg_color poke test ROM
 ** DONE create structure for screen component
@@ -69,8 +70,8 @@ Experiment if that doesn't work.
 ** DONE create tilemap test ROM
 ** DONE implement tilemap rendering
 * Audio
-** DONE describe audio spec
-** DONE create PDM encoder/decoder
 ** TODO create audio worklet with shared memory
 ** TODO create PDM wavetable player
-** TODO create PDM wavetable utility
+** TODO create PDM sample encoder
+** DONE describe audio spec
+** DONE create PDM encoder/decoder
