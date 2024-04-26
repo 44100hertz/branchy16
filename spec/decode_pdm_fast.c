@@ -8,10 +8,10 @@ typedef __int128_t FirSlice;
 
 #define FIR_WIDTH (sizeof(FirSlice) * 8)
 #define NUM_FIRS 64
-#define FIR_BITS 11
+#define FIR_BITS 10
 #define MAX_VALUE ((1 << (FIR_BITS - 1)) - 1)
-#define MIN_FIR_CYCLES 4
-#define MAX_FIR_CYCLES 16
+#define MIN_FIR_CYCLES 1
+#define MAX_FIR_CYCLES 8
 
 FirSlice fir_table[FIR_BITS * NUM_FIRS] = {0};
 int16_t bit_counts[FIR_BITS * NUM_FIRS] = {0};
@@ -47,14 +47,14 @@ int main(int argc, char **argv) {
 
 void step_fir(FirBuffer *fir) {
   uint8_t byte = getchar();
-  uint8_t step = 8;
+  uint8_t step = 2;
   FirSlice mask = (1 << step) - 1;
   for (int i = 0; i < 8 / step; ++i) {
     fir->slice <<= step;
     fir->slice |= byte & mask;
     byte >>= step;
     fir->pos += 1;
-    int16_t samp_out = apply_fir(fir->slice, 32);
+    int16_t samp_out = apply_fir(fir->slice, 63);
     putchar(samp_out & 0xff);
     putchar(samp_out >> 8);
   }
