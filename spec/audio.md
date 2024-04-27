@@ -17,7 +17,9 @@ For each channel:
 
 Sample addresses are specified as address-and-bit-offset, 20 bits long so two words each. In the future, I may add "audio ROM" functionality which turns these into 32-bit bit offsets into up to a 256MiB address space.
 
-Playback rate is set using one 16-bit value between 0 (11.7hz) and 14336 (768khz), which behaves similarly to a floating point number. The top 4 bits are the octave nibble (2^x), and the next 11 are a note value between 4095 and 2048 (represented by 0-2047). The bottom bit is ignored. Every hardware sample (48khz), the octave is subtracted from the pitch counter. If it is negative, then -floor(C/note) bits are shifted into the PDM bit buffer, which is incremented by the note value times the number of bits shifted in. This way, a single table can be used for notes by setting the bottom 12 (the lowest bit is ignored) bits of the pitch.
+Playback rate is set using one 16-bit value which is similar to a floating point number, but optimized for music. The top 4 bits are the octave (2^x, 0 <= x <= 12), and the next 12 are a note value between 0 and 4095. This gives the note value a range such that music drivers can share a uniform note table between octaves for a given wavetable.
+
+Internally, every hardware sample (384khz), the octave is subtracted from the pitch counter. If it is negative, then one bit is shifted into the PDM bit buffer, and the timer is incremented by the note value, else the previous bit is shifted in again. Only one bit can be shifted in per cycle. Overall, the pitch formula is (384000 / note) * (2 ^ octave), giving a minimum pitch of 62.5hz and a maximum of 384khz.
 
 Playback volume is just a number 0-65535.
 
