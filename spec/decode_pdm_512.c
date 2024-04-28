@@ -32,7 +32,7 @@ void gen_firs(void);
 static double sinc_norm(double t);
 static double blackman(double t);
 static int16_t popcount(__uint128_t slice) {
-  return __builtin_popcountl(slice) + __builtin_popcountl(slice >> 64);
+  return __builtin_popcountll(slice) + __builtin_popcountll(slice >> 64);
 }
 
 int main(int argc, char **argv) {
@@ -62,8 +62,8 @@ int main(int argc, char **argv) {
 }
 
 void step_fir(FirBuffer *fir) {
-  int16_t octave = 1 << (fir->pitch >> 12);
-  int16_t pitch = fir->pitch & 0x0fff;
+  uint16_t octave = 1 << (fir->pitch >> 12);
+  uint16_t pitch = fir->pitch & 0x0fff;
   if (pitch < octave)
     pitch = octave;
 
@@ -101,11 +101,11 @@ void step_fir(FirBuffer *fir) {
       fir->slice[i] <<= stepsize;
       if (i == 0) {
         // rotate 16 bits into first slice
-        fir->slice[i] |= next_bits & ((1 << stepsize) - 1);
-        next_bits >>= stepsize;
+        fir->slice[i] |= next_bits >> stepsize;
+        next_bits <<= stepsize;
       } else {
         // rotate bits from lower buffer into higher ones
-        fir->slice[i] |= (fir->slice[i - 1] >> (128 - stepsize));
+        fir->slice[i] |= fir->slice[i - 1] >> (128 - stepsize);
       }
     }
     int16_t samp_out = apply_fir(fir->slice, 32);
@@ -119,10 +119,6 @@ int16_t apply_fir(FirSlice samples, int index) {
   FirSlice samples_inv;
   for (uintptr_t i = 0; i < 4; ++i) {
     samples_inv[i] = samples[i] ^ fir_table[index * FIR_BITS + FIR_BITS - 1][i];
-    //   printf("samples: %064lb%064lb\n", (long)(samples[i] >> 64),
-    //          (long)samples[i]);
-    //   printf("mask:    %064lb%064lb\n", (long)(samples_inv[i] >> 64),
-    //          (long)samples_inv[i]);
   }
 
   int32_t out = 0;
