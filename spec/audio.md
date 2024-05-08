@@ -52,7 +52,6 @@ The PDM encoder will have a sample import GUI with many parameters.
  - Quality: resampling of input sample.
  - Prefilter: Pre-encoding lowpass filter.
  - Drive: Reduces error correction, increasing stability and amplitude while reducing quality. (similar to allowing a dithered image to clip more in solid black or solid white regions)
- - Noise shaping amount (from white to blue).
  - Dithering noise (replaces patterned harmonic distortion with stable noise)
 
 ### Runtime PDM encoder
