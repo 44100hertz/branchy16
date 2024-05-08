@@ -167,8 +167,7 @@ static void draw_bg_scanline(BgLayer bg) {
     for (byte x = 0; x < 32; ++x) {
         // get attribute word.
         // don't get attributes from outside of memory.
-        if (i_attrib + x > CPU_MEMSIZE) return;
-        word attrib = cpu_memory[i_attrib + x];
+        word attrib = cpu_memory[(i_attrib + x) % CPU_MEMSIZE];
 
         // attribute: TTTT TTTT _CCC XY__
         byte i_tile = attrib >> 8;
@@ -190,11 +189,6 @@ static void draw_bg_scanline(BgLayer bg) {
 // @i_pattern: tile offset of pattern (32-bit index)
 static void draw_tile_slice(byte x, byte i_pal, word i_pattern, bool reverse,
                             bool swapxy) {
-    // only draw if pattern is within memory bounds
-    if (i_pattern >= CPU_MEMSIZE / 2) return;
-    if (i_pattern + 1 >= CPU_MEMSIZE / 2) return;
-    if (swapxy && i_pattern + 8 >= CPU_MEMSIZE / 2) return;
-
     for (byte i = 0; i < 8; ++i) {
         // get pattern nibble
         byte nib;

@@ -9,7 +9,8 @@ typedef void (*PokeCb)(word addr, word value);
 typedef word (*PeekCb)(word addr);
 
 enum {
-    CPU_MEMSIZE = 0xf000,
+    CPU_MEMSIZE = 1 << 16,
+    CPU_IO_ADDR = 0xf000,
     IO_SIZE = 0x1000,
     CPU_NUM_BRANCHES = 128,
     CPU_ITAG_OFFSET = 11,

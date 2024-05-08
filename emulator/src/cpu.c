@@ -249,7 +249,7 @@ void branch_step_unary(CpuBranch *br, word instr) {
 
 word branch_fetch(CpuBranch *br) {
     word out = cpu_memory[br->pc];
-    br->pc = (br->pc + 1) % CPU_MEMSIZE;
+    br->pc += 1;
     return out;
 }
 
@@ -299,7 +299,7 @@ void branch_clear_loadwait(CpuBranch *br, word value) {
 }
 
 void cpu_store(word addr, word value) {
-    if (addr >= CPU_MEMSIZE) {
+    if (addr >= CPU_IO_ADDR) {
         poke(addr, value);
     } else {
         cpu_memory[addr] = value;
@@ -307,7 +307,7 @@ void cpu_store(word addr, word value) {
 }
 
 word cpu_load(word addr) {
-    if (addr >= CPU_MEMSIZE) {
+    if (addr >= CPU_IO_ADDR) {
         return peek(addr);
     } else {
         return cpu_memory[addr];
