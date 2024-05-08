@@ -20,7 +20,7 @@ static MemWrite memwrites[MAX_STORES];
 static int num_memwrites;
 
 static inline bool branch_running(CpuBranch *br) {
-    return br->running &&
+    return GETFLAG(*br, RUNNING) &&
            (br->ls_state != LS_LOADWAIT || br->mem_addr >= 0xf000);
 }
 static bool try_queue_store(word addr, word value, bool io);
@@ -49,7 +49,7 @@ void cpu_init() {
     memset(cpu_branches, 0, sizeof(cpu_branches));
     // Run branch 0
     cpu_branches[0] = (CpuBranch){
-        .running = true,
+        .flags = CPU_FLAG_RUNNING,
     };
 }
 
@@ -64,7 +64,7 @@ bool cpu_step() {
     int load_count = 0;
     for (CpuBranch *br = cpu_branches; br < last; ++br) {
         // either finish load or execute next instruction
-        if (!br->running) continue;
+        if (!GETFLAG(*br, RUNNING)) continue;
         switch (br->ls_state) {
         case LS_NONE: branch_step(br); break;
         case LS_LOADWAIT:
@@ -196,7 +196,7 @@ void branch_step_special(CpuBranch *br, word instr) {
         word addr = ARG_NIBBLE(4);
         // Jump if compare flags are satisfied
         word requirement = instr & 0x7;
-        if (requirement == 7 || requirement & br->compare_flags) {
+        if (requirement == 7 || requirement & COMPAREFLAGS(*br)) {
             br->pc = addr;
         }
         break;
@@ -215,12 +215,13 @@ void branch_step_special(CpuBranch *br, word instr) {
         word a = ARG_NIBBLE(4);
         word b = ARG_NIBBLE(0);
 
-        br->compare_flags = (a == b ? COND_FLAG_EQ : 0) |
-                            (a < b ? COND_FLAG_LT : 0) |
-                            (a > b ? COND_FLAG_GT : 0);
+        br->flags &= ~CPU_COMPARE_MASK;
+        br->flags |= (a == b ? CPU_FLAG_EQ : 0) |  //
+                     (a < b ? CPU_FLAG_LT : 0) |   //
+                     (a > b ? CPU_FLAG_GT : 0);
         break;
     }
-    case ITAG_HALT: br->running = false; break;
+    case ITAG_HALT: SETFLAG(*br, RUNNING, 0); break;
     }
 }
 
@@ -257,7 +258,7 @@ void branch_start(CpuBranch *source, word pc, word bp) {
     // Find a branch that isn't running.
     uintptr_t new_index = -1;
     for (uintptr_t index = 0; index < CPU_NUM_BRANCHES; ++index) {
-        if (!cpu_branches[index].running) {
+        if (!GETFLAG(cpu_branches[index], RUNNING)) {
             new_index = index;
             break;
         }

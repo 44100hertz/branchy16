@@ -25,10 +25,27 @@ static inline byte cpu_decode_unary(word instr) {
 }
 
 enum {
-    COND_FLAG_EQ = 1,
-    COND_FLAG_LT = 2,
-    COND_FLAG_GT = 4,
+    CPU_FLAG_RUNNING = 1,
+    CPU_FLAG_CARRY = 2,
+    CPU_FLAG_ZERO = 4,
+    CPU_FLAG_NEG = 8,
+    CPU_FLAG_EQ = 0x10,
+    CPU_FLAG_LT = 0x20,
+    CPU_FLAG_GT = 0x40,
+    CPU_FLAG_CONST_1 = 0x80,
 };
+
+enum {
+    CPU_COMPARE_MASK = 0x70,
+};
+
+#define GETFLAG(br, name) (0 != ((br).flags & CPU_FLAG_##name))
+
+#define SETFLAG(br, name, value) \
+    (br).flags =                 \
+        ((br).flags & (~CPU_FLAG_##name)) | (value) ? CPU_FLAG_##name : 0
+
+#define COMPAREFLAGS(br) (((br).flags >> 4) & 0x7)
 
 typedef enum {
     LS_NONE = 0,
@@ -47,8 +64,7 @@ typedef struct {
     word mem_val;   // register or value for memory operations
     LoadStoreState ls_state;
 
-    byte compare_flags;
-    bool running;
+    byte flags;
 } CpuBranch;
 
 void cpu_init();
