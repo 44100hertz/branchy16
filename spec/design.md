@@ -60,6 +60,31 @@ ITAG_TESTBIT: xxxxx --- -SSS BBBB
 DDD: source register
 BBBB: bit index to test
 ```
+
+## Mutex operation
+Currently a mutex lock looks like this:
+```
+load  r0  mutex_addr
+test_mutex:
+cmpr  r0  0
+jumpe free
+loadw r0  mutex_addr
+jump  test_mutex
+free:
+load  r0  addr
+```
+The loop before "free" could be encoded into a single instruction, which simply waits for lock value to become zero.
+
+## Load-Wait non-exclusive
+
+In order to do a non-exclusive load-wait, we have to do this on every branch:
+```
+loadw r0  addr
+store r0  addr
+...
+```
+This allows the next branch to be freed, and the next, etc. which is slow. Meanwhile, for I/O instructions, everything unlocks at the same time. If the above mutex instruction is implemented, then load-waits can become no longer exclusive.
+
 ## Misc ops
  - Copy all CPU flags to and from register
  - Copy base pointer or PC to and from registers
