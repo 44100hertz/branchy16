@@ -64,16 +64,19 @@ BBBB: bit index to test
 ## Mutex operation
 Currently a mutex lock looks like this:
 ```
-load  r0  mutex_addr
+  load  r0  mutex
 test_mutex:
-cmpr  r0  0
-jumpe free
-loadw r0  mutex_addr
-jump  test_mutex
+  cmpr  r0  0
+  jumpe free
+  loadw r0  mutex   ;; wait for mutex value
+  jump  test_mutex
 free:
-load  r0  addr
+  store mutex  1    ;; lock for the next thread
+  load  r0  addr    ;; do anything with the locked value
 ```
-The loop before "free" could be encoded into a single instruction, which simply waits for lock value to become zero.
+One problem off the bat is that storing a 1 to the mutex can't be done atomically, so there's a possibility of another thread loading the "0" causing the mutex to fail.
+
+Putting all of this code (except the load at the end) into a single atomic instruction seems like the best approach.
 
 ## Load-Wait non-exclusive
 
