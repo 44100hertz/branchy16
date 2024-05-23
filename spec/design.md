@@ -78,6 +78,12 @@ One problem off the bat is that storing a 1 to the mutex can't be done atomicall
 
 Putting all of this code (except the load at the end) into a single atomic instruction seems like the best approach.
 
+```
+ITAG_SYNC xxxxx c-- AAAA ----
+
+Waits for address A to equal zero, then resumes execution. A is then set to 0 if c is clear, and 1 if set.
+```
+
 ## Load-Wait non-exclusive
 
 In order to do a non-exclusive load-wait, we have to do this on every branch:
@@ -95,6 +101,14 @@ This allows the next branch to be freed, and the next, etc. which is slow. Meanw
 # Stack
 
 Right now branchy16 has no stack, which makes subroutines not really possible. Adding a stack pointer into RAM to every branch kind of stinks, but maybe each branch can have its own dedicated stack in some hidden RAM. This also means adding a stack pointer register, as well as push, pop, jump to subroutine, and return instructions.
+
+# Replace relative addressing with stack addressing
+
+Since each branch will have a stack, maybe instead of the "base pointer" 
+
+# Get rid of "branch" name
+
+Branches should probably be named "threads". "Branch" is misleading. Maybe "limb".
 
 # Making PC and BP accessible in register nibble
 
@@ -128,6 +142,18 @@ How fast? Saving should be slow enough that save data isn't used as a secondary 
 Something like a networked "game link cable" that can go over the network is warranted to enhance the social aspect of games. For game servers...no idea.
 
 I won't design it all here, but it's a consideration.
+
+# Screen and blanking
+
+Right now the screen resolution is 240x160, or 15x10 tiles. I think the ideal resolution is actually 288x192, or 18x12 tiles. This preserves the 3:2 aspect originally intended, while also offering a decent 240p letterboxed solution for CRT displays. The internal horizontal resolution would be 640px, but 576px would be displayed, keeping the game in the safe region of 568px, minus 4px on each side which _could_ be overscanned but likely will be tolerable.
+
+This also changes the clock speed and blanking calculations.
+
+NTSC scanning region is 525 lines, giving 384 lines of draw and 141 lines of blanking. 
+
+NTSC active line period is defined as 52.9µs, and my calculations figure that 63.5µs are needed per scanline for 525 lines at 60hz. For a 320px active line, this gives a 384px scan region, out of which 288px is used, giving 96px of hblank.
+
+So overall, the scanning region is 384x262.5 at 60hz, or 6.048mhz. With 8 cycles per scanline, this gives 6 cycles of draw and 2 cycles of blanking, and a final clock speed of 8 * 262.5 * 60 = 126khz per branch.
 
 # Fetching versus random access imbalance
 Right now, branchy has a funny imbalance: Each branch can fetch an instruction word every cycle, but only 6 processes can fetch arbitrary memory. So effectively, 128 RAM accesses per cycle are being eaten by CPU fetching, but a only 6 random accesses happen per cycle. How can this make sense?
